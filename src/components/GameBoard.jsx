@@ -1,0 +1,183 @@
+import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
+import { getSonarReading, getSonarColor } from '../game/engine';
+import Ship from './Ship';
+import SonarPing from './SonarPing';
+import Explosion from './Explosion';
+import PortIcon from './PortIcon';
+
+export default function GameBoard({
+  level,
+  shipPos,
+  shipAngle,
+  mines,
+  visitedTiles,
+  sonarPing,
+  revealMines,
+  gameState,
+  GAME_STATE,
+  move,
+}) {
+  const { cols, rows, landTiles, shallowTiles, endPos } = level;
+  const containerRef = useRef(null);
+  const [tileSize, setTileSize] = useState(40);
+
+  // Compute tile size so the entire map fits the viewport.
+  // Subtract HUD bar (~60px) and mobile controls bar (~130px) from window height,
+  // since the parent container's clientHeight may not yet reflect flex layout.
+  const computeTileSize = useCallback(() => {
+    const availW = window.innerWidth - 16;
+    const availH = window.innerHeight - 60 - 130 - 16;
+
+    const maxByWidth = Math.floor(availW / cols);
+    const maxByHeight = Math.floor(availH / rows);
+    const size = Math.max(16, Math.min(maxByWidth, maxByHeight, 48));
+    setTileSize(size);
+  }, [cols, rows]);
+
+  useEffect(() => {
+    computeTileSize();
+    window.addEventListener('resize', computeTileSize);
+    return () => window.removeEventListener('resize', computeTileSize);
+  }, [computeTileSize]);
+
+  const gridWidth = cols * tileSize;
+  const gridHeight = rows * tileSize;
+
+  // Pre-compute sonar readings for all visited tiles
+  const tileReadings = useMemo(() => {
+    const readings = {};
+    for (const key of visitedTiles) {
+      const [c, r] = key.split(',').map(Number);
+      readings[key] = getSonarReading(c, r, mines);
+    }
+    return readings;
+  }, [visitedTiles, mines]);
+
+  // Scale factors for SVG elements inside tiles
+  const iconScale = tileSize / 40;
+  const fontSize = Math.max(9, Math.round(14 * iconScale));
+  const mineIconSize = Math.max(14, Math.round(24 * iconScale));
+  const portIconSize = Math.max(16, Math.round(28 * iconScale));
+
+  // Render grid tiles
+  const tiles = useMemo(() => {
+    const result = [];
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        const key = `${col},${row}`;
+        const isLand = landTiles.has(key);
+        const isShallow = shallowTiles.has(key);
+        const isVisited = visitedTiles.has(key);
+        const isMine = mines.has(key);
+        const isEnd = col === endPos.col && row === endPos.row;
+        const reading = tileReadings[key];
+
+        let bg;
+        if (isLand) {
+          bg = 'var(--color-land)';
+        } else if (isVisited) {
+          bg = 'var(--color-ocean-path)';
+        } else if (isShallow) {
+          bg = 'var(--color-ocean-shallow)';
+        } else {
+          bg = 'var(--color-ocean-deep)';
+        }
+
+        result.push(
+          <div
+            key={key}
+            style={{
+              position: 'absolute',
+              left: col * tileSize,
+              top: row * tileSize,
+              width: tileSize,
+              height: tileSize,
+              backgroundColor: bg,
+              borderRight: '1px solid rgba(255,255,255,0.05)',
+              borderBottom: '1px solid rgba(255,255,255,0.05)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'background-color 0.2s ease',
+            }}
+          >
+            {/* Sonar number on visited water tiles */}
+            {isVisited && !isLand && reading !== undefined && (
+              <span
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize,
+                  fontWeight: 600,
+                  color: getSonarColor(reading),
+                  opacity: 0.9,
+                  textShadow: '0 0 4px rgba(0,0,0,0.5)',
+                  pointerEvents: 'none',
+                }}
+              >
+                {reading}
+              </span>
+            )}
+
+            {/* Revealed mine */}
+            {revealMines && isMine && (
+              <svg width={mineIconSize} height={mineIconSize} viewBox="0 0 24 24" style={{ position: 'absolute' }}>
+                <circle cx="12" cy="12" r="8" fill="#ff0000" stroke="#cc0000" strokeWidth="1.5" />
+                <line x1="12" y1="2" x2="12" y2="6" stroke="#cc0000" strokeWidth="2" />
+                <line x1="12" y1="18" x2="12" y2="22" stroke="#cc0000" strokeWidth="2" />
+                <line x1="2" y1="12" x2="6" y2="12" stroke="#cc0000" strokeWidth="2" />
+                <line x1="18" y1="12" x2="22" y2="12" stroke="#cc0000" strokeWidth="2" />
+                <line x1="5" y1="5" x2="8" y2="8" stroke="#cc0000" strokeWidth="1.5" />
+                <line x1="16" y1="16" x2="19" y2="19" stroke="#cc0000" strokeWidth="1.5" />
+                <line x1="5" y1="19" x2="8" y2="16" stroke="#cc0000" strokeWidth="1.5" />
+                <line x1="16" y1="8" x2="19" y2="5" stroke="#cc0000" strokeWidth="1.5" />
+              </svg>
+            )}
+
+            {/* Port/destination icon */}
+            {isEnd && <PortIcon size={portIconSize} />}
+          </div>
+        );
+      }
+    }
+    return result;
+  }, [cols, rows, landTiles, shallowTiles, visitedTiles, mines, endPos, tileReadings, revealMines, tileSize, fontSize, mineIconSize, portIconSize]);
+
+  return (
+    <div
+      ref={containerRef}
+      className="relative mx-auto select-none"
+      style={{
+        width: gridWidth,
+        height: gridHeight,
+      }}
+    >
+      {tiles}
+
+      {sonarPing && (
+        <SonarPing
+          key={sonarPing.key}
+          col={sonarPing.col}
+          row={sonarPing.row}
+          tileSize={tileSize}
+        />
+      )}
+
+      {gameState !== GAME_STATE.DEAD && (
+        <Ship
+          col={shipPos.col}
+          row={shipPos.row}
+          angle={shipAngle}
+          tileSize={tileSize}
+        />
+      )}
+
+      {gameState === GAME_STATE.DEAD && (
+        <Explosion
+          col={shipPos.col}
+          row={shipPos.row}
+          tileSize={tileSize}
+        />
+      )}
+    </div>
+  );
+}

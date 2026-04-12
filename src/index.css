@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: 'Pirata One', cursive;
+  --font-mono: 'Share Tech Mono', monospace;
+  --font-sans: 'Inter', sans-serif;
+
+  --color-ocean-deep: #1a4a6b;
+  --color-ocean-shallow: #2a7fa8;
+  --color-ocean-path: #3a9fcc;
+  --color-land: #d4b483;
+  --color-land-terrain: #a8c87a;
+  --color-danger: #ff6b35;
+  --color-danger-red: #ff0000;
+  --color-safe: #00cc88;
+  --color-ui-bg: #0d2137;
+  --color-ui-text: #e8f4f8;
+  --color-ui-accent: #f0a500;
+}
+
+body {
+  margin: 0;
+  background: var(--color-ui-bg);
+  color: var(--color-ui-text);
+  font-family: var(--font-sans);
+  overflow: hidden;
+  height: 100dvh;
+}
+
+#root {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Sonar ping animation */
+@keyframes sonar-ping {
+  0% {
+    transform: scale(0.5);
+    opacity: 0.8;
+    border-color: var(--color-ui-accent);
+  }
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+    border-color: var(--color-safe);
+  }
+}
+
+.sonar-ping {
+  animation: sonar-ping 0.6s ease-out forwards;
+}
+
+.sonar-ping-delayed {
+  animation: sonar-ping 0.6s ease-out 0.15s forwards;
+}
+
+/* Explosion animation */
+@keyframes explode {
+  0% { transform: scale(0.3); opacity: 1; }
+  50% { transform: scale(1.5); opacity: 0.8; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+@keyframes screen-shake {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-8px, -6px); }
+  20% { transform: translate(6px, 8px); }
+  30% { transform: translate(-10px, 4px); }
+  40% { transform: translate(8px, -8px); }
+  50% { transform: translate(-4px, 10px); }
+  60% { transform: translate(6px, -6px); }
+  70% { transform: translate(-8px, 4px); }
+  80% { transform: translate(10px, 8px); }
+  90% { transform: translate(-6px, -10px); }
+}
+
+.screen-shake {
+  animation: screen-shake 0.5s ease-out;
+}
+
+/* Ship transition */
+.ship-move {
+  transition: top 150ms ease, left 150ms ease, transform 150ms ease;
+}
+
+/* Water tile shimmer */
+@keyframes water-shimmer {
+  0%, 100% { opacity: 0.03; }
+  50% { opacity: 0.08; }
+}
