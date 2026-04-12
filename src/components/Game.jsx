@@ -2,11 +2,15 @@ import { useState, useEffect, useRef } from 'react';
 import { useGame } from '../game/useGame';
 import { recordCompletion } from '../game/storage';
 import { getNickname, setNickname, submitScore, getRank } from '../game/supabase';
+import { startOceanAmbient, stopOceanAmbient, playSonarPing, playExplosion, playVictory, isMuted, toggleMute } from '../game/audio';
 import GameBoard from './GameBoard';
 import HUD from './HUD';
 import MobileControls from './MobileControls';
 import NicknamePrompt from './NicknamePrompt';
+import HowToPlay from './HowToPlay';
 import { DeathOverlay, WinOverlay } from './GameOverlay';
+
+const HOW_TO_PLAY_KEY = 'strait-navigator-howtoplay-seen';
 
 export default function Game({ level, onLevelSelect, onNextLevel, onLeaderboard, hasNextLevel }) {
   const {
@@ -19,7 +23,8 @@ export default function Game({ level, onLevelSelect, onNextLevel, onLeaderboard,
     attempts,
     sonarPing,
     sonarReading,
-    revealMines,
+    revealedMines,
+    isFirstMove,
     move,
     restart,
     GAME_STATE,
@@ -31,6 +36,64 @@ export default function Game({ level, onLevelSelect, onNextLevel, onLeaderboard,
   const [showNicknamePrompt, setShowNicknamePrompt] = useState(false);
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
   const recordedRef = useRef(false);
+  const [muted, setMutedState] = useState(() => isMuted());
+
+  // Audio: start ocean ambient on mount, stop on unmount
+  useEffect(() => {
+    startOceanAmbient();
+    return () => stopOceanAmbient();
+  }, []);
+
+  // Audio: sonar ping on each move
+  const prevSonarPingRef = useRef(null);
+  useEffect(() => {
+    if (sonarPing && sonarPing.key !== prevSonarPingRef.current) {
+      prevSonarPingRef.current = sonarPing.key;
+      playSonarPing();
+    }
+  }, [sonarPing]);
+
+  // Audio: explosion on death, victory horn on win
+  useEffect(() => {
+    if (gameState === GAME_STATE.DEAD) playExplosion();
+    if (gameState === GAME_STATE.WON) playVictory();
+  }, [gameState, GAME_STATE.DEAD, GAME_STATE.WON]);
+
+  const handleToggleMute = () => {
+    const nowMuted = toggleMute();
+    setMutedState(nowMuted);
+  };
+
+  // How-to-play modal: show before Level 1 only, once ever
+  const [showHowToPlay, setShowHowToPlay] = useState(() => {
+    if (level.id !== 1) return false;
+    return !localStorage.getItem(HOW_TO_PLAY_KEY);
+  });
+
+  // Sonar tooltip: show on first move of Level 1, once ever
+  const SONAR_TIP_KEY = 'strait-navigator-sonar-tip-seen';
+  const [showSonarTooltip, setShowSonarTooltip] = useState(false);
+  const sonarTipShownRef = useRef(false);
+
+  useEffect(() => {
+    if (
+      !isFirstMove &&
+      level.id === 1 &&
+      !sonarTipShownRef.current &&
+      !localStorage.getItem(SONAR_TIP_KEY)
+    ) {
+      sonarTipShownRef.current = true;
+      setShowSonarTooltip(true);
+      localStorage.setItem(SONAR_TIP_KEY, '1');
+      const timer = setTimeout(() => setShowSonarTooltip(false), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [isFirstMove, level.id]);
+
+  const dismissHowToPlay = () => {
+    localStorage.setItem(HOW_TO_PLAY_KEY, '1');
+    setShowHowToPlay(false);
+  };
 
   // Record completion and submit score exactly once when won
   useEffect(() => {
@@ -39,7 +102,6 @@ export default function Game({ level, onLevelSelect, onNextLevel, onLeaderboard,
       const newBest = recordCompletion(level.id, elapsedMs);
       setIsNewBest(newBest);
 
-      // Check if we have a nickname to submit score
       const nickname = getNickname();
       if (nickname) {
         submitScore(level.id, elapsedMs, nickname).then(() => {
@@ -49,7 +111,6 @@ export default function Game({ level, onLevelSelect, onNextLevel, onLeaderboard,
           setGlobalRank(rank);
         });
       } else {
-        // Show nickname prompt
         setShowNicknamePrompt(true);
       }
     }
@@ -85,6 +146,9 @@ export default function Game({ level, onLevelSelect, onNextLevel, onLeaderboard,
         gameState={gameState}
         GAME_STATE={GAME_STATE}
         onLevelSelect={onLevelSelect}
+        muted={muted}
+        onToggleMute={handleToggleMute}
+        showSonarTooltip={showSonarTooltip}
       />
 
       {/* Game area */}
@@ -102,7 +166,7 @@ export default function Game({ level, onLevelSelect, onNextLevel, onLeaderboard,
             mines={mines}
             visitedTiles={visitedTiles}
             sonarPing={sonarPing}
-            revealMines={revealMines}
+            revealedMines={revealedMines}
             gameState={gameState}
             GAME_STATE={GAME_STATE}
             move={move}
@@ -134,6 +198,8 @@ export default function Game({ level, onLevelSelect, onNextLevel, onLeaderboard,
       </div>
 
       <MobileControls onMove={move} onRestart={restart} />
+
+      {showHowToPlay && <HowToPlay onDismiss={dismissHowToPlay} />}
 
       {showNicknamePrompt && (
         <NicknamePrompt

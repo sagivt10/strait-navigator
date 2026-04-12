@@ -1,6 +1,6 @@
 import { formatTime, getSonarColor } from '../game/engine';
 
-export default function HUD({ levelName, elapsedMs, sonarReading, gameState, GAME_STATE, onLevelSelect }) {
+export default function HUD({ levelName, elapsedMs, sonarReading, gameState, GAME_STATE, onLevelSelect, showSonarTooltip, muted, onToggleMute }) {
   const sonarColor = getSonarColor(sonarReading);
   const sonarLabel =
     sonarReading === 0
@@ -17,8 +17,8 @@ export default function HUD({ levelName, elapsedMs, sonarReading, gameState, GAM
         fontSize: 14,
       }}
     >
-      {/* Back + Timer */}
-      <div className="flex items-center gap-3">
+      {/* Back + Mute + Timer */}
+      <div className="flex items-center gap-2">
         <button
           onClick={onLevelSelect}
           className="cursor-pointer"
@@ -34,6 +34,22 @@ export default function HUD({ levelName, elapsedMs, sonarReading, gameState, GAM
           title="Back to missions"
         >
           &#9776;
+        </button>
+        <button
+          onClick={onToggleMute}
+          className="cursor-pointer"
+          style={{
+            fontSize: 14,
+            padding: '4px 6px',
+            background: 'rgba(240, 165, 0, 0.1)',
+            color: muted ? 'rgba(232,244,248,0.3)' : 'var(--color-ui-accent)',
+            border: '1px solid rgba(240, 165, 0, 0.2)',
+            borderRadius: 3,
+            lineHeight: 1,
+          }}
+          title={muted ? 'Unmute' : 'Mute'}
+        >
+          {muted ? '\u{1F507}' : '\u{1F50A}'}
         </button>
         <div className="flex items-center gap-1">
           <span style={{ color: 'var(--color-ui-accent)', fontSize: 14 }}>&#9201;</span>
@@ -69,7 +85,7 @@ export default function HUD({ levelName, elapsedMs, sonarReading, gameState, GAM
       </div>
 
       {/* Sonar reading */}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 relative">
         <span style={{ fontSize: 13, color: 'var(--color-ui-text)', opacity: 0.6 }}>SONAR:</span>
         <span
           style={{
@@ -81,6 +97,39 @@ export default function HUD({ levelName, elapsedMs, sonarReading, gameState, GAM
         >
           {sonarReading === 0 && gameState === GAME_STATE.READY ? '\u2014' : sonarLabel}
         </span>
+
+        {/* Sonar tooltip — shows on first move, fades out */}
+        {showSonarTooltip && (
+          <div
+            className="absolute right-0 top-full mt-2 whitespace-nowrap z-50"
+            style={{
+              fontFamily: 'var(--font-sans)',
+              fontSize: 12,
+              color: 'var(--color-ui-text)',
+              background: 'rgba(240, 165, 0, 0.15)',
+              border: '1px solid rgba(240, 165, 0, 0.35)',
+              borderRadius: 4,
+              padding: '6px 10px',
+              animation: 'sonar-tooltip-fade 4s ease-in-out forwards',
+            }}
+          >
+            This number = mines within 2 tiles of you
+            <div
+              style={{
+                position: 'absolute',
+                top: -5,
+                right: 16,
+                width: 8,
+                height: 8,
+                background: 'rgba(240, 165, 0, 0.15)',
+                border: '1px solid rgba(240, 165, 0, 0.35)',
+                borderRight: 'none',
+                borderBottom: 'none',
+                transform: 'rotate(45deg)',
+              }}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

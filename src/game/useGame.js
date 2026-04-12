@@ -23,7 +23,8 @@ export function useGame(level) {
   const [elapsedMs, setElapsedMs] = useState(0);
   const [attempts, setAttempts] = useState(1);
   const [sonarPing, setSonarPing] = useState(null);
-  const [revealMines, setRevealMines] = useState(false);
+  const [revealedMines, setRevealedMines] = useState(new Set()); // accumulates across retries
+  const [isFirstMove, setIsFirstMove] = useState(true);
 
   const timerRef = useRef(null);
   const startTimeRef = useRef(null);
@@ -48,7 +49,7 @@ export function useGame(level) {
     }
   }, []);
 
-  // Restart the level (mines stay the same — seeded by level ID)
+  // Restart the level — mines stay the same, revealed mines accumulate
   const restart = useCallback(() => {
     stopTimer();
     setShipPos(level.startPos);
@@ -57,7 +58,7 @@ export function useGame(level) {
     setGameState(GAME_STATE.READY);
     setElapsedMs(0);
     setSonarPing(null);
-    setRevealMines(false);
+    setIsFirstMove(true);
     setAttempts((a) => a + 1);
     isMovingRef.current = false;
   }, [level, stopTimer]);
@@ -80,6 +81,7 @@ export function useGame(level) {
       if (gameStateRef.current === GAME_STATE.READY) {
         setGameState(GAME_STATE.PLAYING);
         gameStateRef.current = GAME_STATE.PLAYING;
+        setIsFirstMove(false);
         startTimer();
       }
 
@@ -99,13 +101,17 @@ export function useGame(level) {
       // --- DEBUG: log every move for win detection ---
       console.log('[MOVE]', { newCol, newRow, tileKey, endPos: level.endPos, matchesEnd: newCol === level.endPos.col && newRow === level.endPos.row, hasMine: mines.has(tileKey) });
 
-      // Check for mine hit
+      // Check for mine hit — reveal only the mine that was hit
       if (mines.has(tileKey)) {
         setTimeout(() => {
           stopTimer();
           setGameState(GAME_STATE.DEAD);
           gameStateRef.current = GAME_STATE.DEAD;
-          setRevealMines(true);
+          setRevealedMines((prev) => {
+            const next = new Set(prev);
+            next.add(tileKey);
+            return next;
+          });
           isMovingRef.current = false;
         }, 160);
         return;
@@ -170,7 +176,8 @@ export function useGame(level) {
     attempts,
     sonarPing,
     sonarReading,
-    revealMines,
+    revealedMines,
+    isFirstMove,
     move,
     restart,
     GAME_STATE,

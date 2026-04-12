@@ -1,9 +1,17 @@
 import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
-import { getSonarReading, getSonarColor } from '../game/engine';
+import { getSonarReading } from '../game/engine';
 import Ship from './Ship';
 import SonarPing from './SonarPing';
 import Explosion from './Explosion';
 import PortIcon from './PortIcon';
+
+// Heat-map colors by mine proximity
+function sonarTileColor(count) {
+  if (count === 0) return '#1a6b5a';
+  if (count === 1) return '#8bc34a';
+  if (count === 2) return '#ff9800';
+  return '#f44336'; // 3+
+}
 
 export default function GameBoard({
   level,
@@ -12,7 +20,7 @@ export default function GameBoard({
   mines,
   visitedTiles,
   sonarPing,
-  revealMines,
+  revealedMines,
   gameState,
   GAME_STATE,
   move,
@@ -21,13 +29,9 @@ export default function GameBoard({
   const containerRef = useRef(null);
   const [tileSize, setTileSize] = useState(40);
 
-  // Compute tile size so the entire map fits the viewport.
-  // Subtract HUD bar (~60px) and mobile controls bar (~130px) from window height,
-  // since the parent container's clientHeight may not yet reflect flex layout.
   const computeTileSize = useCallback(() => {
     const availW = window.innerWidth - 16;
     const availH = window.innerHeight - 60 - 130 - 16;
-
     const maxByWidth = Math.floor(availW / cols);
     const maxByHeight = Math.floor(availH / rows);
     const size = Math.max(16, Math.min(maxByWidth, maxByHeight, 48));
@@ -53,11 +57,9 @@ export default function GameBoard({
     return readings;
   }, [visitedTiles, mines]);
 
-  // Scale factors for SVG elements inside tiles
-  const iconScale = tileSize / 40;
-  const fontSize = Math.max(9, Math.round(14 * iconScale));
-  const mineIconSize = Math.max(14, Math.round(24 * iconScale));
-  const portIconSize = Math.max(16, Math.round(28 * iconScale));
+  const mineIconSize = Math.max(14, Math.round(24 * (tileSize / 40)));
+  const portIconSize = Math.max(16, Math.round(28 * (tileSize / 40)));
+  const shipKey = `${shipPos.col},${shipPos.row}`;
 
   // Render grid tiles
   const tiles = useMemo(() => {
@@ -68,15 +70,15 @@ export default function GameBoard({
         const isLand = landTiles.has(key);
         const isShallow = shallowTiles.has(key);
         const isVisited = visitedTiles.has(key);
-        const isMine = mines.has(key);
         const isEnd = col === endPos.col && row === endPos.row;
         const reading = tileReadings[key];
+        const isShipTile = key === shipKey;
 
         let bg;
         if (isLand) {
           bg = 'var(--color-land)';
-        } else if (isVisited) {
-          bg = 'var(--color-ocean-path)';
+        } else if (isVisited && reading !== undefined) {
+          bg = sonarTileColor(reading);
         } else if (isShallow) {
           bg = 'var(--color-ocean-shallow)';
         } else {
@@ -86,6 +88,7 @@ export default function GameBoard({
         result.push(
           <div
             key={key}
+            className={isShipTile && isVisited && !isLand ? 'ship-tile-pulse' : ''}
             style={{
               position: 'absolute',
               left: col * tileSize,
@@ -98,28 +101,11 @@ export default function GameBoard({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              transition: 'background-color 0.2s ease',
+              transition: 'background-color 0.3s ease',
             }}
           >
-            {/* Sonar number on visited water tiles */}
-            {isVisited && !isLand && reading !== undefined && (
-              <span
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize,
-                  fontWeight: 600,
-                  color: getSonarColor(reading),
-                  opacity: 0.9,
-                  textShadow: '0 0 4px rgba(0,0,0,0.5)',
-                  pointerEvents: 'none',
-                }}
-              >
-                {reading}
-              </span>
-            )}
-
-            {/* Revealed mine */}
-            {revealMines && isMine && (
+            {/* Revealed mine (only mines the player has hit) */}
+            {revealedMines.has(key) && (
               <svg width={mineIconSize} height={mineIconSize} viewBox="0 0 24 24" style={{ position: 'absolute' }}>
                 <circle cx="12" cy="12" r="8" fill="#ff0000" stroke="#cc0000" strokeWidth="1.5" />
                 <line x1="12" y1="2" x2="12" y2="6" stroke="#cc0000" strokeWidth="2" />
@@ -140,16 +126,13 @@ export default function GameBoard({
       }
     }
     return result;
-  }, [cols, rows, landTiles, shallowTiles, visitedTiles, mines, endPos, tileReadings, revealMines, tileSize, fontSize, mineIconSize, portIconSize]);
+  }, [cols, rows, landTiles, shallowTiles, visitedTiles, mines, endPos, tileReadings, revealedMines, tileSize, mineIconSize, portIconSize, shipKey]);
 
   return (
     <div
       ref={containerRef}
       className="relative mx-auto select-none"
-      style={{
-        width: gridWidth,
-        height: gridHeight,
-      }}
+      style={{ width: gridWidth, height: gridHeight }}
     >
       {tiles}
 
