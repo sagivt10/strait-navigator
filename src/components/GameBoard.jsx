@@ -43,23 +43,13 @@ export default function GameBoard({
 
   const computeTileSize = useCallback(() => {
     const isMobile = window.innerWidth < 768;
-    const hud = document.getElementById('game-hud');
-    const hudH = hud?.offsetHeight || 52;
-    const padding = 8;
-    const availW = window.innerWidth - padding;
-    const maxTile = isMobile ? 32 : 48;
-    // On mobile, controls float over the map so don't subtract their height
-    if (isMobile) {
-      const availH = window.innerHeight - hudH - padding;
-      const size = Math.max(16, Math.min(Math.floor(availW / cols), Math.floor(availH / rows), maxTile));
-      setTileSize(size);
-    } else {
-      const controls = document.getElementById('mobile-controls');
-      const controlsH = controls?.offsetHeight || 180;
-      const availH = window.innerHeight - hudH - controlsH - padding;
-      const size = Math.max(16, Math.min(Math.floor(availW / cols), Math.floor(availH / rows), maxTile));
-      setTileSize(size);
-    }
+    const availW = window.innerWidth - 16;
+    const availH = window.innerHeight - 60 - 130 - 16;
+    const maxByWidth = Math.floor(availW / cols);
+    const maxByHeight = Math.floor(availH / rows);
+    const maxTile = isMobile ? 28 : 48;
+    const size = Math.max(16, Math.min(maxByWidth, maxByHeight, maxTile));
+    setTileSize(size);
   }, [cols, rows]);
 
   useEffect(() => {

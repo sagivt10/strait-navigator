@@ -5,13 +5,6 @@ export default function HUD({ levelName, elapsedMs, sonarReading, gameState, GAM
   const [flashColor, setFlashColor] = useState(null);
   const flashTimerRef = useRef(null);
   const prevEventsLenRef = useRef(0);
-  const [narrow, setNarrow] = useState(() => window.innerWidth < 430);
-
-  useEffect(() => {
-    const onResize = () => setNarrow(window.innerWidth < 430);
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, []);
 
   useEffect(() => {
     if (!scoreEvents || scoreEvents.length === 0 || scoreEvents.length === prevEventsLenRef.current) return;
@@ -38,8 +31,7 @@ export default function HUD({ levelName, elapsedMs, sonarReading, gameState, GAM
 
   return (
     <div
-      id="game-hud"
-      className="game-hud flex items-center justify-between px-3 py-2 shrink-0 gap-2"
+      className="flex items-center justify-between px-3 py-2 shrink-0 gap-2"
       style={{
         background: 'rgba(13, 33, 55, 0.95)',
         borderBottom: '1px solid rgba(240, 165, 0, 0.3)',
@@ -116,46 +108,26 @@ export default function HUD({ levelName, elapsedMs, sonarReading, gameState, GAM
             {formatTime(elapsedMs)}
           </span>
         </div>
-        {narrow && (
-          <div
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 16,
-              fontWeight: 900,
-              color: flashColor || 'var(--color-ui-text)',
-              textShadow: flashColor
-                ? `0 0 12px ${flashColor}, 0 0 4px ${flashColor}`
-                : '0 0 6px rgba(232,244,248,0.2)',
-              letterSpacing: 1,
-              lineHeight: 1,
-              transition: 'color 0.1s ease',
-            }}
-          >
-            {formattedScore}
-          </div>
-        )}
       </div>
 
       {/* Score + Level name */}
-      <div className="flex flex-col items-center" style={{ minWidth: narrow ? 'auto' : 100 }}>
-        {!narrow && (
-          <div
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 22,
-              fontWeight: 900,
-              color: flashColor || 'var(--color-ui-text)',
-              textShadow: flashColor
-                ? `0 0 12px ${flashColor}, 0 0 4px ${flashColor}`
-                : '0 0 6px rgba(232,244,248,0.2)',
-              letterSpacing: 1,
-              lineHeight: 1,
-              transition: 'color 0.1s ease',
-            }}
-          >
-            {formattedScore}
-          </div>
-        )}
+      <div className="flex flex-col items-center" style={{ minWidth: 100 }}>
+        <div
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 22,
+            fontWeight: 900,
+            color: flashColor || 'var(--color-ui-text)',
+            textShadow: flashColor
+              ? `0 0 12px ${flashColor}, 0 0 4px ${flashColor}`
+              : '0 0 6px rgba(232,244,248,0.2)',
+            letterSpacing: 1,
+            lineHeight: 1,
+            transition: 'color 0.1s ease',
+          }}
+        >
+          {formattedScore}
+        </div>
         <div
           className="truncate"
           style={{
