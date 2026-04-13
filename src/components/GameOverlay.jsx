@@ -129,17 +129,29 @@ export function WinOverlay({
     }
   };
 
+  const isSmall = typeof window !== 'undefined' && window.innerWidth < 430;
+  const s = (size) => isSmall ? Math.round(size * 0.8) : size;
+
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center z-50"
-      style={{ background: 'rgba(13, 33, 55, 0.85)' }}
+      className="fixed inset-0 z-50"
+      style={{
+        background: 'rgba(13, 33, 55, 0.85)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflowY: 'auto',
+        maxHeight: '100dvh',
+        padding: 16,
+      }}
     >
-      <div className="text-center px-3" style={{ overflowY: 'auto', maxHeight: '85vh', paddingBottom: 16 }}>
-        <div style={{ fontSize: 32, marginBottom: 2 }}>&#9875;</div>
+      <div className="text-center" style={{ width: '100%', maxWidth: 360 }}>
+        <div style={{ fontSize: s(32), marginBottom: 2 }}>&#9875;</div>
         <div
           style={{
             fontFamily: 'var(--font-display)',
-            fontSize: 36,
+            fontSize: s(36),
             color: '#00cc88',
             marginBottom: 4,
             textShadow: '0 0 20px rgba(0,204,136,0.4)',
@@ -150,9 +162,9 @@ export function WinOverlay({
         <div
           style={{
             fontFamily: 'var(--font-display)',
-            fontSize: 18,
+            fontSize: s(18),
             color: 'var(--color-ui-accent)',
-            marginBottom: 10,
+            marginBottom: isSmall ? 6 : 10,
           }}
         >
           {levelName}
@@ -161,10 +173,10 @@ export function WinOverlay({
         <div
           style={{
             fontFamily: 'var(--font-mono)',
-            fontSize: 13,
+            fontSize: s(13),
             color: 'var(--color-ui-text)',
-            marginBottom: 8,
-            lineHeight: 1.8,
+            marginBottom: 6,
+            lineHeight: 1.7,
             opacity: 0.7,
           }}
         >
@@ -180,7 +192,7 @@ export function WinOverlay({
         <div
           style={{
             fontFamily: 'var(--font-mono)',
-            fontSize: 32,
+            fontSize: s(32),
             color: 'var(--color-ui-accent)',
             marginBottom: 2,
             fontWeight: 700,
@@ -191,12 +203,12 @@ export function WinOverlay({
         <div
           style={{
             fontFamily: 'var(--font-mono)',
-            fontSize: 11,
+            fontSize: s(11),
             color: 'var(--color-ui-text)',
             opacity: 0.4,
             textTransform: 'uppercase',
             letterSpacing: 1,
-            marginBottom: 6,
+            marginBottom: 4,
           }}
         >
           FINAL SCORE
@@ -204,7 +216,7 @@ export function WinOverlay({
         <div
           style={{
             fontFamily: 'var(--font-mono)',
-            fontSize: 14,
+            fontSize: s(14),
             color: 'var(--color-ui-text)',
             marginBottom: 2,
             opacity: 0.6,
@@ -218,9 +230,9 @@ export function WinOverlay({
           <div
             style={{
               fontFamily: 'var(--font-mono)',
-              fontSize: 14,
+              fontSize: s(14),
               color: globalRank <= 3 ? 'var(--color-ui-accent)' : '#00cc88',
-              marginBottom: 4,
+              marginBottom: 3,
             }}
           >
             Global rank: #{globalRank}
@@ -231,9 +243,9 @@ export function WinOverlay({
           <div
             style={{
               fontFamily: 'var(--font-mono)',
-              fontSize: 13,
+              fontSize: s(13),
               color: 'var(--color-ui-accent)',
-              marginBottom: 4,
+              marginBottom: 3,
             }}
           >
             NEW BEST SCORE!
@@ -242,10 +254,10 @@ export function WinOverlay({
         <div
           style={{
             fontFamily: 'var(--font-mono)',
-            fontSize: 14,
+            fontSize: s(14),
             color: 'var(--color-ui-text)',
             opacity: 0.5,
-            marginBottom: 12,
+            marginBottom: isSmall ? 8 : 12,
           }}
         >
           {attempts > 1 ? `Completed in ${attempts} attempts` : 'First try!'}
@@ -257,8 +269,8 @@ export function WinOverlay({
           className="cursor-pointer mb-2 block mx-auto"
           style={{
             fontFamily: 'var(--font-mono)',
-            fontSize: 13,
-            padding: '8px 20px',
+            fontSize: s(13),
+            padding: isSmall ? '6px 16px' : '8px 20px',
             background: copied ? 'rgba(0,204,136,0.2)' : 'rgba(240,165,0,0.15)',
             color: copied ? '#00cc88' : 'var(--color-ui-accent)',
             border: `1px solid ${copied ? 'rgba(0,204,136,0.4)' : 'rgba(240,165,0,0.3)'}`,
@@ -277,8 +289,8 @@ export function WinOverlay({
               className="cursor-pointer"
               style={{
                 fontFamily: 'var(--font-mono)',
-                fontSize: 15,
-                padding: '10px 28px',
+                fontSize: s(15),
+                padding: isSmall ? '8px 22px' : '10px 28px',
                 background: 'var(--color-ui-accent)',
                 color: 'var(--color-ui-bg)',
                 border: 'none',
@@ -295,8 +307,8 @@ export function WinOverlay({
             className="cursor-pointer"
             style={{
               fontFamily: 'var(--font-mono)',
-              fontSize: 13,
-              padding: '10px 16px',
+              fontSize: s(13),
+              padding: isSmall ? '8px 12px' : '10px 16px',
               background: 'rgba(240,165,0,0.1)',
               color: 'var(--color-ui-accent)',
               border: '1px solid rgba(240,165,0,0.25)',
@@ -310,8 +322,8 @@ export function WinOverlay({
             className="cursor-pointer"
             style={{
               fontFamily: 'var(--font-mono)',
-              fontSize: 13,
-              padding: '10px 16px',
+              fontSize: s(13),
+              padding: isSmall ? '8px 12px' : '10px 16px',
               background: 'transparent',
               color: 'var(--color-ui-text)',
               border: '1px solid rgba(255,255,255,0.2)',

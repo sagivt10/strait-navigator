@@ -228,32 +228,44 @@ export default function DailyGame({ onBack, onDailyLeaderboard }) {
           )}
 
           {/* Daily Win Overlay */}
-          {gameState === GAME_STATE.WON && (
+          {gameState === GAME_STATE.WON && (() => {
+            const isSmall = typeof window !== 'undefined' && window.innerWidth < 430;
+            const s = (size) => isSmall ? Math.round(size * 0.8) : size;
+            return (
             <div
-              className="fixed inset-0 flex items-center justify-center z-50"
-              style={{ background: 'rgba(13, 33, 55, 0.85)' }}
+              className="fixed inset-0 z-50"
+              style={{
+                background: 'rgba(13, 33, 55, 0.85)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                overflowY: 'auto',
+                maxHeight: '100dvh',
+                padding: 16,
+              }}
             >
-              <div className="text-center px-3" style={{ overflowY: 'auto', maxHeight: '85vh', paddingBottom: 16 }}>
-                <div style={{ fontSize: 28, marginBottom: 2 }}>{'\u{1F5D3}\uFE0F'}</div>
+              <div className="text-center" style={{ width: '100%', maxWidth: 360 }}>
+                <div style={{ fontSize: s(28), marginBottom: 2 }}>{'\u{1F5D3}\uFE0F'}</div>
                 <div style={{
-                  fontFamily: 'var(--font-display)', fontSize: 28,
+                  fontFamily: 'var(--font-display)', fontSize: s(28),
                   color: '#00cc88', marginBottom: 4,
                   textShadow: '0 0 20px rgba(0,204,136,0.4)',
                 }}>
                   DAILY COMPLETE
                 </div>
                 <div style={{
-                  fontFamily: 'var(--font-display)', fontSize: 16,
-                  color: 'var(--color-ui-accent)', marginBottom: 10,
+                  fontFamily: 'var(--font-display)', fontSize: s(16),
+                  color: 'var(--color-ui-accent)', marginBottom: isSmall ? 6 : 10,
                 }}>
                   {dateLabel}
                 </div>
 
                 {/* Score breakdown */}
                 <div style={{
-                  fontFamily: 'var(--font-mono)', fontSize: 13,
-                  color: 'var(--color-ui-text)', marginBottom: 8,
-                  lineHeight: 1.8, opacity: 0.7,
+                  fontFamily: 'var(--font-mono)', fontSize: s(13),
+                  color: 'var(--color-ui-text)', marginBottom: 6,
+                  lineHeight: 1.7, opacity: 0.7,
                 }}>
                   <div>Base: <span style={{ color: 'var(--color-ui-text)' }}>10,000</span></div>
                   <div>Time penalty: <span style={{ color: '#ff6b35' }}>-{dailyTimePenalty.toLocaleString()}</span></div>
@@ -265,23 +277,23 @@ export default function DailyGame({ onBack, onDailyLeaderboard }) {
                   )}
                 </div>
                 <div style={{
-                  fontFamily: 'var(--font-mono)', fontSize: 32,
+                  fontFamily: 'var(--font-mono)', fontSize: s(32),
                   color: 'var(--color-ui-accent)', marginBottom: 2, fontWeight: 700,
                 }}>
                   ${score.toLocaleString()}
                 </div>
                 <div style={{
-                  fontFamily: 'var(--font-mono)', fontSize: 11,
+                  fontFamily: 'var(--font-mono)', fontSize: s(11),
                   color: 'var(--color-ui-text)', opacity: 0.4,
-                  textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6,
+                  textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4,
                 }}>
                   FINAL SCORE
                 </div>
 
                 {/* Time + Deaths */}
                 <div style={{
-                  fontFamily: 'var(--font-mono)', fontSize: 14,
-                  color: 'var(--color-ui-text)', marginBottom: 6, opacity: 0.6,
+                  fontFamily: 'var(--font-mono)', fontSize: s(14),
+                  color: 'var(--color-ui-text)', marginBottom: 4, opacity: 0.6,
                 }}>
                   {timeStr} &middot; {deaths === 0 ? 'No deaths' : `${deaths} death${deaths > 1 ? 's' : ''}`}
                 </div>
@@ -289,9 +301,9 @@ export default function DailyGame({ onBack, onDailyLeaderboard }) {
                 {/* Emoji route grid */}
                 {emojiGrid && (
                   <div style={{
-                    fontFamily: 'var(--font-mono)', fontSize: 14,
-                    marginBottom: 10, letterSpacing: 1, lineHeight: 1.4,
-                    maxWidth: 300, margin: '0 auto 10px', wordBreak: 'break-all',
+                    fontFamily: 'var(--font-mono)', fontSize: s(14),
+                    marginBottom: isSmall ? 6 : 10, letterSpacing: 1, lineHeight: 1.4,
+                    maxWidth: 300, margin: `0 auto ${isSmall ? 6 : 10}px`, wordBreak: 'break-all',
                   }}>
                     {emojiGrid}
                   </div>
@@ -299,8 +311,8 @@ export default function DailyGame({ onBack, onDailyLeaderboard }) {
 
                 {alreadySubmitted && (
                   <div style={{
-                    fontFamily: 'var(--font-mono)', fontSize: 12,
-                    color: 'var(--color-ui-text)', opacity: 0.4, marginBottom: 8,
+                    fontFamily: 'var(--font-mono)', fontSize: s(12),
+                    color: 'var(--color-ui-text)', opacity: 0.4, marginBottom: 6,
                   }}>
                     Score already submitted today
                   </div>
@@ -311,8 +323,8 @@ export default function DailyGame({ onBack, onDailyLeaderboard }) {
                   onClick={handleShare}
                   className="cursor-pointer mb-2 block mx-auto"
                   style={{
-                    fontFamily: 'var(--font-mono)', fontSize: 13,
-                    padding: '8px 20px',
+                    fontFamily: 'var(--font-mono)', fontSize: s(13),
+                    padding: isSmall ? '6px 16px' : '8px 20px',
                     background: copied ? 'rgba(0,204,136,0.2)' : 'rgba(240,165,0,0.15)',
                     color: copied ? '#00cc88' : 'var(--color-ui-accent)',
                     border: `1px solid ${copied ? 'rgba(0,204,136,0.4)' : 'rgba(240,165,0,0.3)'}`,
@@ -325,21 +337,21 @@ export default function DailyGame({ onBack, onDailyLeaderboard }) {
                 {/* Action buttons */}
                 <div className="flex items-center gap-2 justify-center flex-wrap mt-2">
                   <button onClick={onDailyLeaderboard} className="cursor-pointer" style={{
-                    fontFamily: 'var(--font-mono)', fontSize: 13, padding: '10px 16px',
+                    fontFamily: 'var(--font-mono)', fontSize: s(13), padding: isSmall ? '8px 12px' : '10px 16px',
                     background: 'rgba(240,165,0,0.1)', color: 'var(--color-ui-accent)',
                     border: '1px solid rgba(240,165,0,0.25)', borderRadius: 4,
                   }}>
                     DAILY RANKS
                   </button>
                   <button onClick={restart} className="cursor-pointer" style={{
-                    fontFamily: 'var(--font-mono)', fontSize: 13, padding: '10px 16px',
+                    fontFamily: 'var(--font-mono)', fontSize: s(13), padding: isSmall ? '8px 12px' : '10px 16px',
                     background: 'transparent', color: 'var(--color-ui-text)',
                     border: '1px solid rgba(255,255,255,0.2)', borderRadius: 4, opacity: 0.7,
                   }}>
                     REPLAY [R]
                   </button>
                   <button onClick={onBack} className="cursor-pointer" style={{
-                    fontFamily: 'var(--font-mono)', fontSize: 13, padding: '10px 16px',
+                    fontFamily: 'var(--font-mono)', fontSize: s(13), padding: isSmall ? '8px 12px' : '10px 16px',
                     background: 'transparent', color: 'var(--color-ui-text)',
                     border: '1px solid rgba(255,255,255,0.2)', borderRadius: 4, opacity: 0.7,
                   }}>
@@ -348,7 +360,8 @@ export default function DailyGame({ onBack, onDailyLeaderboard }) {
                 </div>
               </div>
             </div>
-          )}
+            );
+          })()}
         </div>
       </div>
 
