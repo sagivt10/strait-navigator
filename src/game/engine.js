@@ -23,6 +23,13 @@ export function computeScore(elapsedMs, deaths) {
 }
 
 /**
+ * Compute daily challenge score: -300 per death instead of -500.
+ */
+export function computeDailyScore(elapsedMs, deaths) {
+  return Math.max(0, Math.round(10000 - (elapsedMs / 100) - (deaths * 300)));
+}
+
+/**
  * Compute the set of water tiles that fall within each drone's kill zone.
  * Kill radius is 1 for levels 1-5, 2 for levels 6-10.
  * Optional droneList overrides level.drones (for intercept system).

@@ -4,6 +4,8 @@ import LevelSelect from './components/LevelSelect';
 import LevelIntro from './components/LevelIntro';
 import Game from './components/Game';
 import Leaderboard from './components/Leaderboard';
+import DailyGame from './components/DailyGame';
+import DailyLeaderboard from './components/DailyLeaderboard';
 import { getLevelById, allLevelsMeta } from './levels/index';
 
 const SCREENS = {
@@ -12,6 +14,8 @@ const SCREENS = {
   LEVEL_INTRO: 'level_intro',
   GAME: 'game',
   LEADERBOARD: 'leaderboard',
+  DAILY: 'daily',
+  DAILY_LEADERBOARD: 'daily_leaderboard',
 };
 
 function App() {
@@ -50,6 +54,14 @@ function App() {
     setScreen(SCREENS.LEADERBOARD);
   }, []);
 
+  const goToDaily = useCallback(() => {
+    setScreen(SCREENS.DAILY);
+  }, []);
+
+  const goToDailyLeaderboard = useCallback(() => {
+    setScreen(SCREENS.DAILY_LEADERBOARD);
+  }, []);
+
   const currentLevel = currentLevelId ? getLevelById(currentLevelId) : null;
   const currentMeta = currentLevelId
     ? allLevelsMeta.find((m) => m.id === currentLevelId)
@@ -59,7 +71,7 @@ function App() {
   return (
     <>
       {screen === SCREENS.LANDING && (
-        <LandingPage onStart={goToLevelSelect} />
+        <LandingPage onStart={goToLevelSelect} onDaily={goToDaily} />
       )}
 
       {screen === SCREENS.LEVEL_SELECT && (
@@ -67,6 +79,7 @@ function App() {
           onSelectLevel={startLevel}
           onBack={goToLanding}
           onLeaderboard={goToLeaderboard}
+          onDaily={goToDaily}
         />
       )}
 
@@ -90,6 +103,18 @@ function App() {
           initialLevelId={currentLevelId || 1}
           onBack={goToLevelSelect}
         />
+      )}
+
+      {screen === SCREENS.DAILY && (
+        <DailyGame
+          key="daily"
+          onBack={goToLevelSelect}
+          onDailyLeaderboard={goToDailyLeaderboard}
+        />
+      )}
+
+      {screen === SCREENS.DAILY_LEADERBOARD && (
+        <DailyLeaderboard onBack={goToDaily} />
       )}
     </>
   );

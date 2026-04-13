@@ -1,4 +1,4 @@
-export default function LandingPage({ onStart }) {
+export default function LandingPage({ onStart, onDaily }) {
   return (
     <div
       className="flex flex-col items-center justify-center h-full relative overflow-hidden"
@@ -78,35 +78,64 @@ export default function LandingPage({ onStart }) {
           Navigate the world's most dangerous waters
         </p>
 
-        {/* CTA Button */}
-        <button
-          onClick={onStart}
-          className="cursor-pointer"
-          style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: 18,
-            padding: '16px 48px',
-            background: 'var(--color-ui-accent)',
-            color: 'var(--color-ui-bg)',
-            border: 'none',
-            borderRadius: 4,
-            fontWeight: 700,
-            letterSpacing: 2,
-            textTransform: 'uppercase',
-            boxShadow: '0 0 30px rgba(240, 165, 0, 0.3)',
-            transition: 'transform 0.2s, box-shadow 0.2s',
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.transform = 'scale(1.05)';
-            e.target.style.boxShadow = '0 0 40px rgba(240, 165, 0, 0.5)';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.transform = 'scale(1)';
-            e.target.style.boxShadow = '0 0 30px rgba(240, 165, 0, 0.3)';
-          }}
-        >
-          Begin Mission
-        </button>
+        {/* CTA Buttons */}
+        <div className="flex flex-col items-center gap-3">
+          <button
+            onClick={onStart}
+            className="cursor-pointer"
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 18,
+              padding: '16px 48px',
+              background: 'var(--color-ui-accent)',
+              color: 'var(--color-ui-bg)',
+              border: 'none',
+              borderRadius: 4,
+              fontWeight: 700,
+              letterSpacing: 2,
+              textTransform: 'uppercase',
+              boxShadow: '0 0 30px rgba(240, 165, 0, 0.3)',
+              transition: 'transform 0.2s, box-shadow 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = 'scale(1.05)';
+              e.target.style.boxShadow = '0 0 40px rgba(240, 165, 0, 0.5)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = 'scale(1)';
+              e.target.style.boxShadow = '0 0 30px rgba(240, 165, 0, 0.3)';
+            }}
+          >
+            Begin Mission
+          </button>
+
+          <button
+            onClick={onDaily}
+            className="cursor-pointer"
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 15,
+              padding: '12px 36px',
+              background: 'rgba(0, 204, 136, 0.12)',
+              color: '#00cc88',
+              border: '1px solid rgba(0, 204, 136, 0.35)',
+              borderRadius: 4,
+              fontWeight: 700,
+              letterSpacing: 1,
+              transition: 'transform 0.2s, background 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = 'scale(1.03)';
+              e.target.style.background = 'rgba(0, 204, 136, 0.2)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = 'scale(1)';
+              e.target.style.background = 'rgba(0, 204, 136, 0.12)';
+            }}
+          >
+            {'\u{1F5D3}\uFE0F'} DAILY CHALLENGE
+          </button>
+        </div>
       </div>
 
       {/* Footer branding */}

@@ -2,7 +2,7 @@ import { allLevelsMeta, getLevelById } from '../levels/index';
 import { isLevelUnlocked, getBestTime } from '../game/storage';
 import { formatTime } from '../game/engine';
 
-export default function LevelSelect({ onSelectLevel, onBack, onLeaderboard }) {
+export default function LevelSelect({ onSelectLevel, onBack, onLeaderboard, onDaily }) {
   return (
     <div
       className="flex flex-col h-full"
@@ -60,6 +60,51 @@ export default function LevelSelect({ onSelectLevel, onBack, onLeaderboard }) {
 
       {/* Level grid */}
       <div className="flex-1 overflow-auto p-4">
+        {/* Daily Challenge banner */}
+        <div className="max-w-2xl mx-auto mb-3">
+          <button
+            onClick={onDaily}
+            className="cursor-pointer w-full text-left"
+            style={{
+              padding: '14px 16px',
+              background: 'rgba(0, 204, 136, 0.08)',
+              border: '1px solid rgba(0, 204, 136, 0.3)',
+              borderRadius: 6,
+              transition: 'background 0.2s',
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span style={{
+                  fontFamily: 'var(--font-mono)', fontSize: 12,
+                  color: '#00cc88', background: 'rgba(0,204,136,0.15)',
+                  padding: '2px 6px', borderRadius: 3,
+                }}>
+                  {'\u{1F5D3}\uFE0F'}
+                </span>
+                <span style={{
+                  fontFamily: 'var(--font-display)', fontSize: 17,
+                  color: '#00cc88',
+                }}>
+                  Daily Challenge
+                </span>
+              </div>
+              <span style={{
+                fontFamily: 'var(--font-mono)', fontSize: 12,
+                color: '#00cc88', opacity: 0.7,
+              }}>
+                New map every day
+              </span>
+            </div>
+            <div style={{
+              fontFamily: 'var(--font-sans)', fontSize: 12,
+              color: 'var(--color-ui-text)', opacity: 0.5, marginTop: 4,
+            }}>
+              Same mines for everyone worldwide. One score per day.
+            </div>
+          </button>
+        </div>
+
         <div
           className="grid gap-3 max-w-2xl mx-auto"
           style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}

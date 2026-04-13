@@ -134,3 +134,79 @@ export async function getRank(levelId, score, timeMs) {
   console.error('[Leaderboard] Rank error:', error.message);
   return null;
 }
+
+// --- Daily Challenge API ---
+
+/**
+ * Submit a daily challenge score.
+ * Falls back to the regular scores table if daily_scores doesn't exist.
+ */
+export async function submitDailyScore(challengeDate, timeMs, playerName, score, deaths) {
+  // Try daily_scores table first
+  const { data, error } = await supabase
+    .from('daily_scores')
+    .insert({
+      player_name: playerName,
+      challenge_date: challengeDate,
+      time_ms: timeMs,
+      score: score,
+      deaths: deaths,
+    })
+    .select()
+    .single();
+
+  if (!error) {
+    console.log('[Daily] Submit success:', data);
+    return data;
+  }
+
+  // Fall back to regular scores table with a special level_id
+  console.warn('[Daily] daily_scores table not found, falling back to scores table:', error.message);
+  const fallbackPayload = {
+    player_name: playerName,
+    level_id: 9999, // Special ID for daily challenges
+    time_ms: timeMs,
+  };
+
+  const { data: fbData, error: fbError } = await supabase
+    .from('scores')
+    .insert(fallbackPayload)
+    .select()
+    .single();
+
+  if (fbError) {
+    console.error('[Daily] Fallback submit error:', fbError.message);
+    return null;
+  }
+  return fbData;
+}
+
+/**
+ * Fetch today's daily leaderboard (top 10).
+ */
+export async function getDailyLeaderboard(challengeDate) {
+  // Try daily_scores table
+  const { data, error } = await supabase
+    .from('daily_scores')
+    .select('id, player_name, score, time_ms, deaths, created_at')
+    .eq('challenge_date', challengeDate)
+    .order('score', { ascending: false })
+    .limit(10);
+
+  if (!error) return data || [];
+
+  // Fall back to regular scores with special level_id
+  console.warn('[Daily] Falling back to scores table for daily leaderboard');
+  const { data: fbData, error: fbError } = await supabase
+    .from('scores')
+    .select('id, player_name, time_ms, created_at')
+    .eq('level_id', 9999)
+    .order('time_ms', { ascending: true })
+    .limit(10);
+
+  if (fbError) {
+    console.error('[Daily] Leaderboard fetch error:', fbError.message);
+    return [];
+  }
+  return fbData || [];
+}
