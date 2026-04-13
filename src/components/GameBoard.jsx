@@ -42,14 +42,23 @@ export default function GameBoard({
   const [tileSize, setTileSize] = useState(40);
 
   const computeTileSize = useCallback(() => {
-    const availW = window.innerWidth - 16;
-    const hudH = document.querySelector('.game-hud')?.offsetHeight || 60;
-    const controlsH = document.querySelector('.mobile-controls')?.offsetHeight || 130;
-    const availH = window.innerHeight - hudH - controlsH - 16;
-    const maxByWidth = Math.floor(availW / cols);
-    const maxByHeight = Math.floor(availH / rows);
-    const size = Math.max(16, Math.min(maxByWidth, maxByHeight, 48));
-    setTileSize(size);
+    const isMobile = window.innerWidth < 768;
+    const hud = document.getElementById('game-hud');
+    const hudH = hud?.offsetHeight || 52;
+    const padding = 8;
+    const availW = window.innerWidth - padding;
+    // On mobile, controls float over the map so don't subtract their height
+    if (isMobile) {
+      const availH = window.innerHeight - hudH - padding;
+      const size = Math.max(16, Math.min(Math.floor(availW / cols), Math.floor(availH / rows), 48));
+      setTileSize(size);
+    } else {
+      const controls = document.getElementById('mobile-controls');
+      const controlsH = controls?.offsetHeight || 180;
+      const availH = window.innerHeight - hudH - controlsH - padding;
+      const size = Math.max(16, Math.min(Math.floor(availW / cols), Math.floor(availH / rows), 48));
+      setTileSize(size);
+    }
   }, [cols, rows]);
 
   useEffect(() => {

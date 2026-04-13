@@ -38,6 +38,7 @@ export default function HUD({ levelName, elapsedMs, sonarReading, gameState, GAM
 
   return (
     <div
+      id="game-hud"
       className="game-hud flex items-center justify-between px-3 py-2 shrink-0 gap-2"
       style={{
         background: 'rgba(13, 33, 55, 0.95)',
