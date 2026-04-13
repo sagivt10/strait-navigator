@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useGame } from '../game/useGame';
-import { computeDailyScore, formatTime, getSonarReading } from '../game/engine';
-import { getDailyLevel, getDailyDateString, formatDailyDate, hasDailySubmitted, markDailySubmitted, buildRouteEmojiGrid } from '../game/daily';
-import { getNickname, setNickname, submitDailyScore } from '../game/supabase';
+import { formatTime, getSonarReading } from '../game/engine';
+import { getDailyLevel, getDailyDateString, formatDailyDate, hasDailySubmitted, markDailySubmitted, clearDailySubmitted, buildRouteEmojiGrid } from '../game/daily';
+import { getNickname, setNickname, submitDailyScore, verifyDailySubmission } from '../game/supabase';
 import { startOceanAmbient, stopOceanAmbient, playSonarPing, playExplosion, playVictory, isMuted, toggleMute } from '../game/audio';
 import GameBoard from './GameBoard';
 import HUD from './HUD';
@@ -20,9 +20,10 @@ export default function DailyGame({ onBack, onDailyLeaderboard }) {
   const {
     shipPos, shipAngle, mines, activeDrones, droneKillZones,
     visitedTiles, gameState, deathCause, killerDronePos,
-    elapsedMs, finalElapsedMs, attempts, deaths,
+    elapsedMs, finalElapsedMs, totalElapsedMs, attempts, deaths,
     sonarPing, sonarReading, revealedMines, isFirstMove,
     interceptsLeft, interceptMessage, lastInterceptEvent, wakeTrail,
+    scoreEvents, interceptBonuses,
     move, restart, intercept, GAME_STATE,
   } = useGame(level);
 
@@ -33,6 +34,24 @@ export default function DailyGame({ onBack, onDailyLeaderboard }) {
 
   // Audio
   useEffect(() => { startOceanAmbient(); return () => stopOceanAmbient(); }, []);
+
+  // Self-heal stale localStorage flag: if localStorage says "submitted" but
+  // no row actually exists in daily_scores, clear the flag so the player can retry.
+  useEffect(() => {
+    if (hasDailySubmitted(dateStr)) {
+      const nickname = getNickname();
+      if (nickname) {
+        verifyDailySubmission(dateStr, nickname).then((exists) => {
+          if (!exists) {
+            console.warn('[DAILY] Stale localStorage flag detected — no row in daily_scores for', dateStr, nickname, '— clearing');
+            clearDailySubmitted();
+          } else {
+            console.log('[DAILY] Verified: submission exists in daily_scores for', dateStr);
+          }
+        });
+      }
+    }
+  }, [dateStr]);
 
   const prevSonarPingRef = useRef(null);
   useEffect(() => {
@@ -54,25 +73,39 @@ export default function DailyGame({ onBack, onDailyLeaderboard }) {
   const dismissHowToPlay = () => { localStorage.setItem(HOW_TO_PLAY_KEY, '1'); setShowHowToPlay(false); };
   const openHowToPlay = () => setShowHowToPlay(true);
 
+  // Compute daily score from total accumulated time across all attempts
+  // Daily uses -300 per death instead of -500
+  const computeFinalDailyScore = (totalTimeMs) => {
+    const tp = Math.round(totalTimeMs / 100);
+    const dp = deaths * 300;
+    return Math.max(0, 10000 - tp - dp + interceptBonuses);
+  };
+
   // Daily score submission — once per day
   useEffect(() => {
     if (gameState === GAME_STATE.WON && !recordedRef.current) {
       recordedRef.current = true;
 
       if (hasDailySubmitted(dateStr)) {
-        console.log('[DAILY] Already submitted today');
+        console.log('[DAILY] Already submitted today, skipping');
         return;
       }
 
-      const timeForScore = finalElapsedMs ?? elapsedMs;
-      const score = computeDailyScore(timeForScore, deaths);
-      console.log('[DAILY] Win!', { timeForScore, deaths, score });
+      const timeForScore = finalElapsedMs ?? totalElapsedMs;
+      const score = computeFinalDailyScore(timeForScore);
+      console.log('[DAILY] Win!', { dateStr, timeForScore, deaths, score });
 
       const nickname = getNickname();
+      console.log('[DAILY] Nickname:', nickname || '(none — showing prompt)');
       if (nickname) {
-        markDailySubmitted(dateStr);
-        submitDailyScore(dateStr, timeForScore, nickname, score, deaths).then(() => {
-          setScoreSubmitted(true);
+        submitDailyScore(dateStr, timeForScore, nickname, score, deaths).then((result) => {
+          if (result) {
+            console.log('[DAILY] Submission succeeded, marking localStorage');
+            markDailySubmitted(dateStr);
+            setScoreSubmitted(true);
+          } else {
+            console.error('[DAILY] Submission returned null — NOT marking localStorage');
+          }
         });
       } else {
         setShowNicknamePrompt(true);
@@ -82,20 +115,33 @@ export default function DailyGame({ onBack, onDailyLeaderboard }) {
       recordedRef.current = false;
       setScoreSubmitted(false);
     }
-  }, [gameState, dateStr, finalElapsedMs, elapsedMs, deaths, GAME_STATE.WON, GAME_STATE.READY]);
+  }, [gameState, dateStr, finalElapsedMs, totalElapsedMs, deaths, GAME_STATE.WON, GAME_STATE.READY]);
 
   const handleNicknameSubmit = (name) => {
     setNickname(name);
     setShowNicknamePrompt(false);
-    const timeForScore = finalElapsedMs ?? elapsedMs;
-    const score = computeDailyScore(timeForScore, deaths);
-    markDailySubmitted(dateStr);
-    submitDailyScore(dateStr, timeForScore, name, score, deaths).then(() => {
-      setScoreSubmitted(true);
+    const timeForScore = finalElapsedMs ?? totalElapsedMs;
+    const score = computeFinalDailyScore(timeForScore);
+    console.log('[DAILY] Nickname submitted, submitting score:', { name, dateStr, timeForScore, score, deaths });
+    submitDailyScore(dateStr, timeForScore, name, score, deaths).then((result) => {
+      if (result) {
+        console.log('[DAILY] Post-nickname submission succeeded, marking localStorage');
+        markDailySubmitted(dateStr);
+        setScoreSubmitted(true);
+      } else {
+        console.error('[DAILY] Post-nickname submission returned null — NOT marking localStorage');
+      }
     });
   };
 
-  const score = gameState === GAME_STATE.WON ? computeDailyScore(finalElapsedMs ?? elapsedMs, deaths) : 0;
+  const winTimeMs = finalElapsedMs ?? totalElapsedMs;
+  const score = gameState === GAME_STATE.WON ? computeFinalDailyScore(winTimeMs) : 0;
+  const dailyTimePenalty = Math.round(winTimeMs / 100);
+  const dailyDeathPenalty = deaths * 300;
+  // Live score: uses total accumulated time (previous attempts + current)
+  const liveScore = gameState === GAME_STATE.READY
+    ? 10000
+    : Math.max(0, 10000 - Math.round(totalElapsedMs / 100) - (deaths * 300) + interceptBonuses);
   const timeStr = formatTime(finalElapsedMs ?? elapsedMs);
   const alreadySubmitted = hasDailySubmitted(dateStr);
 
@@ -142,6 +188,8 @@ export default function DailyGame({ onBack, onDailyLeaderboard }) {
         showSonarTooltip={false}
         interceptsLeft={interceptsLeft}
         interceptMessage={interceptMessage}
+        liveScore={liveScore}
+        scoreEvents={scoreEvents}
       />
 
       <div
@@ -167,6 +215,7 @@ export default function DailyGame({ onBack, onDailyLeaderboard }) {
             move={move}
             wakeTrail={wakeTrail}
             lastInterceptEvent={lastInterceptEvent}
+            scoreEvents={scoreEvents}
           />
 
           {gameState === GAME_STATE.DEAD && (
@@ -200,25 +249,39 @@ export default function DailyGame({ onBack, onDailyLeaderboard }) {
                   {dateLabel}
                 </div>
 
-                {/* Score */}
+                {/* Score breakdown */}
+                <div style={{
+                  fontFamily: 'var(--font-mono)', fontSize: 13,
+                  color: 'var(--color-ui-text)', marginBottom: 8,
+                  lineHeight: 1.8, opacity: 0.7,
+                }}>
+                  <div>Base: <span style={{ color: 'var(--color-ui-text)' }}>10,000</span></div>
+                  <div>Time penalty: <span style={{ color: '#ff6b35' }}>-{dailyTimePenalty.toLocaleString()}</span></div>
+                  {deaths > 0 && (
+                    <div>Deaths: <span style={{ color: '#ff0000' }}>{deaths} &times; -300 = -{dailyDeathPenalty.toLocaleString()}</span></div>
+                  )}
+                  {interceptBonuses > 0 && (
+                    <div>Intercept: <span style={{ color: '#00cc88' }}>+{interceptBonuses.toLocaleString()}</span></div>
+                  )}
+                </div>
                 <div style={{
                   fontFamily: 'var(--font-mono)', fontSize: 32,
                   color: 'var(--color-ui-accent)', marginBottom: 2, fontWeight: 700,
                 }}>
-                  {score.toLocaleString()}
+                  ${score.toLocaleString()}
                 </div>
                 <div style={{
                   fontFamily: 'var(--font-mono)', fontSize: 11,
                   color: 'var(--color-ui-text)', opacity: 0.4,
                   textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6,
                 }}>
-                  SCORE
+                  FINAL SCORE
                 </div>
 
                 {/* Time + Deaths */}
                 <div style={{
-                  fontFamily: 'var(--font-mono)', fontSize: 16,
-                  color: 'var(--color-ui-text)', marginBottom: 6, opacity: 0.8,
+                  fontFamily: 'var(--font-mono)', fontSize: 14,
+                  color: 'var(--color-ui-text)', marginBottom: 6, opacity: 0.6,
                 }}>
                   {timeStr} &middot; {deaths === 0 ? 'No deaths' : `${deaths} death${deaths > 1 ? 's' : ''}`}
                 </div>

@@ -26,6 +26,8 @@ export function useGame(level) {
   const [interceptMessage, setInterceptMessage] = useState(null);
   const [lastInterceptEvent, setLastInterceptEvent] = useState(null);
   const [wakeTrail, setWakeTrail] = useState([]);
+  const [scoreEvents, setScoreEvents] = useState([]);
+  const [interceptBonuses, setInterceptBonuses] = useState(0);
 
   // Active kill zones — recomputed when drones are destroyed
   const droneKillZones = useMemo(
@@ -50,7 +52,8 @@ export function useGame(level) {
   const isMovingRef = useRef(false);
   const gameStateRef = useRef(gameState);
   const interceptMsgTimerRef = useRef(null);
-  const finalTimeRef = useRef(null); // captures time at win for score computation
+  const finalTimeRef = useRef(null); // captures total time at win for score computation
+  const accumulatedTimeRef = useRef(0); // play time from previous attempts (persists across retries)
 
   useEffect(() => {
     gameStateRef.current = gameState;
@@ -71,6 +74,7 @@ export function useGame(level) {
   }, []);
 
   // Restart the level — mines stay the same, revealed mines accumulate
+  // Score state persists: accumulatedTime, deaths (via attempts), interceptBonuses
   const restart = useCallback(() => {
     stopTimer();
     setShipPos(level.startPos);
@@ -88,6 +92,8 @@ export function useGame(level) {
     setInterceptMessage(null);
     setLastInterceptEvent(null);
     setWakeTrail([]);
+    setScoreEvents([]);
+    // NOTE: interceptBonuses and accumulatedTimeRef persist across retries
     if (interceptMsgTimerRef.current) clearTimeout(interceptMsgTimerRef.current);
     isMovingRef.current = false;
     finalTimeRef.current = null;
@@ -117,6 +123,14 @@ export function useGame(level) {
         key: Date.now(),
       });
       setActiveDrones((prev) => prev.filter((d) => d !== bestDrone));
+      setInterceptBonuses((prev) => prev + 200);
+      setScoreEvents((prev) => [...prev, {
+        key: Date.now(),
+        type: 'intercept',
+        amount: 200,
+        col: shipPos.col,
+        row: shipPos.row,
+      }]);
     } else {
       // No drone in range — show message for 1.5s
       setInterceptMessage('NO DRONE IN RANGE');
@@ -171,8 +185,20 @@ export function useGame(level) {
 
       // Check for mine hit — reveal only the mine that was hit
       if (mines.has(tileKey)) {
+        // Floating score event at ship position
+        setScoreEvents((prev) => [...prev, {
+          key: Date.now(),
+          type: 'mine',
+          amount: -500,
+          col: newCol,
+          row: newRow,
+        }]);
         // Immediately start explosion (after movement animation completes)
         setTimeout(() => {
+          // Accumulate this attempt's play time (death screen time is NOT counted)
+          if (startTimeRef.current) {
+            accumulatedTimeRef.current += Date.now() - startTimeRef.current;
+          }
           stopTimer();
           setDeathCause('mine');
           setRevealedMines((prev) => {
@@ -194,6 +220,14 @@ export function useGame(level) {
 
       // Check for drone kill zone — find which drone killed the player
       if (droneKillZones.has(tileKey)) {
+        // Floating score event at ship position
+        setScoreEvents((prev) => [...prev, {
+          key: Date.now() + 1,
+          type: 'drone',
+          amount: -500,
+          col: newCol,
+          row: newRow,
+        }]);
         // Find the closest active drone to the death tile
         let closestDrone = null;
         let closestDist = Infinity;
@@ -207,6 +241,10 @@ export function useGame(level) {
         }
         // Immediately start drone strike animation
         setTimeout(() => {
+          // Accumulate this attempt's play time (death screen time is NOT counted)
+          if (startTimeRef.current) {
+            accumulatedTimeRef.current += Date.now() - startTimeRef.current;
+          }
           stopTimer();
           setDeathCause('drone');
           if (closestDrone) setKillerDronePos({ col: closestDrone.col, row: closestDrone.row });
@@ -225,12 +263,20 @@ export function useGame(level) {
       // Check for win
       if (newCol === level.endPos.col && newRow === level.endPos.row) {
         console.log('[useGame] Win detected at', { newCol, newRow });
+        setScoreEvents((prev) => [...prev, {
+          key: Date.now() + 2,
+          type: 'port',
+          amount: 1000,
+          col: newCol,
+          row: newRow,
+        }]);
         setTimeout(() => {
-          const finalTime = Date.now() - startTimeRef.current;
-          finalTimeRef.current = finalTime;
-          console.log('[useGame] Setting WON state, finalTime:', finalTime);
+          const currentAttemptTime = Date.now() - startTimeRef.current;
+          // Total play time = all previous attempts + this winning attempt
+          finalTimeRef.current = accumulatedTimeRef.current + currentAttemptTime;
+          console.log('[useGame] Setting WON state, totalTime:', finalTimeRef.current, 'currentAttempt:', currentAttemptTime);
           stopTimer();
-          setElapsedMs(finalTime);
+          setElapsedMs(currentAttemptTime);
           setGameState(GAME_STATE.WON);
           gameStateRef.current = GAME_STATE.WON;
           isMovingRef.current = false;
@@ -283,7 +329,9 @@ export function useGame(level) {
 
   const sonarReading = getSonarReading(shipPos.col, shipPos.row, mines);
   const deaths = attempts - 1;
-  const finalElapsedMs = finalTimeRef.current;
+  const finalElapsedMs = finalTimeRef.current; // total accumulated time at win
+  // Total play time so far: previous attempts + current attempt (for live score)
+  const totalElapsedMs = accumulatedTimeRef.current + elapsedMs;
 
   return {
     shipPos,
@@ -297,6 +345,7 @@ export function useGame(level) {
     killerDronePos,
     elapsedMs,
     finalElapsedMs,
+    totalElapsedMs,
     attempts,
     deaths,
     sonarPing,
@@ -307,6 +356,8 @@ export function useGame(level) {
     interceptMessage,
     lastInterceptEvent,
     wakeTrail,
+    scoreEvents,
+    interceptBonuses,
     move,
     restart,
     intercept,

@@ -112,3 +112,26 @@ body {
 .ship-tile-pulse {
   animation: ship-tile-glow 1.5s ease-in-out infinite;
 }
+
+/* Floating score — drifts up and fades out */
+@keyframes floating-score {
+  0% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+  20% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-8px) scale(1.15);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-40px) scale(0.9);
+  }
+}
+
+/* Score flash in HUD */
+@keyframes score-flash {
+  0% { opacity: 1; }
+  50% { opacity: 1; }
+  100% { opacity: 0; }
+}

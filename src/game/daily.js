@@ -75,6 +75,10 @@ export function markDailySubmitted(dateStr) {
   localStorage.setItem(DAILY_SUBMITTED_KEY, date);
 }
 
+export function clearDailySubmitted() {
+  localStorage.removeItem(DAILY_SUBMITTED_KEY);
+}
+
 /**
  * Build the sonar emoji grid from visited tile readings.
  * Maps sonar count -> emoji: 0=🟩, 1=🟧, 2+=🟥

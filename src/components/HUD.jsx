@@ -1,6 +1,28 @@
+import { useState, useEffect, useRef } from 'react';
 import { formatTime, getSonarColor } from '../game/engine';
 
-export default function HUD({ levelName, elapsedMs, sonarReading, gameState, GAME_STATE, onLevelSelect, showSonarTooltip, muted, onToggleMute, onHelp, interceptsLeft, interceptMessage }) {
+export default function HUD({ levelName, elapsedMs, sonarReading, gameState, GAME_STATE, onLevelSelect, showSonarTooltip, muted, onToggleMute, onHelp, interceptsLeft, interceptMessage, liveScore, scoreEvents }) {
+  const [flashColor, setFlashColor] = useState(null);
+  const flashTimerRef = useRef(null);
+  const prevEventsLenRef = useRef(0);
+
+  useEffect(() => {
+    if (!scoreEvents || scoreEvents.length === 0 || scoreEvents.length === prevEventsLenRef.current) return;
+    prevEventsLenRef.current = scoreEvents.length;
+    const latest = scoreEvents[scoreEvents.length - 1];
+    const colors = {
+      mine: '#ff0000',
+      drone: '#ff8800',
+      intercept: '#00cc88',
+      port: '#ffd700',
+    };
+    setFlashColor(colors[latest.type] || null);
+    if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+    flashTimerRef.current = setTimeout(() => setFlashColor(null), 300);
+  }, [scoreEvents]);
+
+  const formattedScore = `$${(liveScore ?? 10000).toLocaleString()}`;
+
   const sonarColor = getSonarColor(sonarReading);
   const sonarLabel =
     sonarReading === 0
@@ -88,18 +110,37 @@ export default function HUD({ levelName, elapsedMs, sonarReading, gameState, GAM
         </div>
       </div>
 
-      {/* Level name */}
-      <div
-        className="truncate"
-        style={{
-          fontFamily: 'var(--font-display)',
-          fontSize: 16,
-          color: 'var(--color-ui-accent)',
-          letterSpacing: 1,
-          textAlign: 'center',
-        }}
-      >
-        {levelName}
+      {/* Score + Level name */}
+      <div className="flex flex-col items-center" style={{ minWidth: 100 }}>
+        <div
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 22,
+            fontWeight: 900,
+            color: flashColor || 'var(--color-ui-text)',
+            textShadow: flashColor
+              ? `0 0 12px ${flashColor}, 0 0 4px ${flashColor}`
+              : '0 0 6px rgba(232,244,248,0.2)',
+            letterSpacing: 1,
+            lineHeight: 1,
+            transition: 'color 0.1s ease',
+          }}
+        >
+          {formattedScore}
+        </div>
+        <div
+          className="truncate"
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 11,
+            color: 'var(--color-ui-accent)',
+            letterSpacing: 0.5,
+            opacity: 0.7,
+            lineHeight: 1.3,
+          }}
+        >
+          {levelName}
+        </div>
       </div>
 
       {/* Intercept + Sonar reading */}

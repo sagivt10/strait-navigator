@@ -9,6 +9,7 @@ import DroneIntercept from './DroneIntercept';
 import DroneStrike from './DroneStrike';
 import DroneIcon from './DroneIcon';
 import Confetti from './Confetti';
+import FloatingScore from './FloatingScore';
 
 // Heat-map colors by mine proximity
 function sonarTileColor(count) {
@@ -34,6 +35,7 @@ export default function GameBoard({
   move,
   wakeTrail,
   lastInterceptEvent,
+  scoreEvents,
 }) {
   const { cols, rows, landTiles, shallowTiles, endPos } = level;
   const containerRef = useRef(null);
@@ -214,6 +216,11 @@ export default function GameBoard({
           to={lastInterceptEvent.to}
           tileSize={tileSize}
         />
+      )}
+
+      {/* Floating score animations */}
+      {scoreEvents && scoreEvents.length > 0 && (
+        <FloatingScore events={scoreEvents} tileSize={tileSize} />
       )}
 
       {/* Win confetti */}

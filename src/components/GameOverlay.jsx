@@ -95,6 +95,9 @@ export function WinOverlay({
   levelName,
   elapsedMs,
   score,
+  timePenalty,
+  deathPenalty,
+  interceptBonuses,
   attempts,
   deaths,
   isNewBest,
@@ -154,6 +157,26 @@ export function WinOverlay({
         >
           {levelName}
         </div>
+        {/* Score breakdown */}
+        <div
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 13,
+            color: 'var(--color-ui-text)',
+            marginBottom: 8,
+            lineHeight: 1.8,
+            opacity: 0.7,
+          }}
+        >
+          <div>Base: <span style={{ color: 'var(--color-ui-text)' }}>10,000</span></div>
+          <div>Time penalty: <span style={{ color: '#ff6b35' }}>-{timePenalty.toLocaleString()}</span></div>
+          {deaths > 0 && (
+            <div>Deaths: <span style={{ color: '#ff0000' }}>{deaths} &times; -500 = -{deathPenalty.toLocaleString()}</span></div>
+          )}
+          {interceptBonuses > 0 && (
+            <div>Intercept: <span style={{ color: '#00cc88' }}>+{interceptBonuses.toLocaleString()}</span></div>
+          )}
+        </div>
         <div
           style={{
             fontFamily: 'var(--font-mono)',
@@ -163,7 +186,7 @@ export function WinOverlay({
             fontWeight: 700,
           }}
         >
-          {score.toLocaleString()}
+          ${score.toLocaleString()}
         </div>
         <div
           style={{
@@ -176,15 +199,15 @@ export function WinOverlay({
             marginBottom: 6,
           }}
         >
-          SCORE
+          FINAL SCORE
         </div>
         <div
           style={{
             fontFamily: 'var(--font-mono)',
-            fontSize: 16,
+            fontSize: 14,
             color: 'var(--color-ui-text)',
             marginBottom: 2,
-            opacity: 0.8,
+            opacity: 0.6,
           }}
         >
           {timeStr} &middot; {deaths === 0 ? 'No deaths' : `${deaths} death${deaths > 1 ? 's' : ''}`}

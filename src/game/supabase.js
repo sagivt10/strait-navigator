@@ -138,47 +138,53 @@ export async function getRank(levelId, score, timeMs) {
 // --- Daily Challenge API ---
 
 /**
- * Submit a daily challenge score.
- * Falls back to the regular scores table if daily_scores doesn't exist.
+ * Submit a daily challenge score to the daily_scores table.
+ * The table requires level_id (NOT NULL), so we use 9999 as the daily sentinel.
  */
 export async function submitDailyScore(challengeDate, timeMs, playerName, score, deaths) {
-  // Try daily_scores table first
-  const { data, error } = await supabase
-    .from('daily_scores')
-    .insert({
-      player_name: playerName,
-      challenge_date: challengeDate,
-      time_ms: timeMs,
-      score: score,
-      deaths: deaths,
-    })
-    .select()
-    .single();
-
-  if (!error) {
-    console.log('[Daily] Submit success:', data);
-    return data;
-  }
-
-  // Fall back to regular scores table with a special level_id
-  console.warn('[Daily] daily_scores table not found, falling back to scores table:', error.message);
-  const fallbackPayload = {
+  const payload = {
     player_name: playerName,
-    level_id: 9999, // Special ID for daily challenges
+    challenge_date: challengeDate,
+    level_id: 9999,
     time_ms: timeMs,
+    score: score,
+    deaths: deaths,
   };
 
-  const { data: fbData, error: fbError } = await supabase
-    .from('scores')
-    .insert(fallbackPayload)
+  console.log('[Daily] submitDailyScore called with:', payload);
+
+  const { data, error } = await supabase
+    .from('daily_scores')
+    .insert(payload)
     .select()
     .single();
 
-  if (fbError) {
-    console.error('[Daily] Fallback submit error:', fbError.message);
+  if (error) {
+    console.error('[Daily] Submit FAILED:', error.code, error.message, error.details);
     return null;
   }
-  return fbData;
+
+  console.log('[Daily] Submit success:', data);
+  return data;
+}
+
+/**
+ * Verify a daily submission actually exists in Supabase.
+ * Returns true if a row exists for this player+date, false otherwise.
+ * Used to clear stale localStorage flags from past failed submissions.
+ */
+export async function verifyDailySubmission(challengeDate, playerName) {
+  const { count, error } = await supabase
+    .from('daily_scores')
+    .select('id', { count: 'exact', head: true })
+    .eq('challenge_date', challengeDate)
+    .eq('player_name', playerName);
+
+  if (error) {
+    console.warn('[Daily] verifyDailySubmission error:', error.message);
+    return false;
+  }
+  return (count ?? 0) > 0;
 }
 
 /**

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useGame } from '../game/useGame';
-import { computeScore } from '../game/engine';
+// Score is now computed inline with accumulated time
 import { recordCompletion } from '../game/storage';
 import { getNickname, setNickname, submitScore, getRank } from '../game/supabase';
 import { startOceanAmbient, stopOceanAmbient, playSonarPing, playExplosion, playVictory, isMuted, toggleMute } from '../game/audio';
@@ -26,6 +26,7 @@ export default function Game({ level, onLevelSelect, onNextLevel, onLeaderboard,
     killerDronePos,
     elapsedMs,
     finalElapsedMs,
+    totalElapsedMs,
     attempts,
     deaths,
     sonarPing,
@@ -36,6 +37,8 @@ export default function Game({ level, onLevelSelect, onNextLevel, onLeaderboard,
     interceptMessage,
     lastInterceptEvent,
     wakeTrail,
+    scoreEvents,
+    interceptBonuses,
     move,
     restart,
     intercept,
@@ -111,14 +114,21 @@ export default function Game({ level, onLevelSelect, onNextLevel, onLeaderboard,
     setShowHowToPlay(true);
   };
 
+  // Compute score from total accumulated time across all attempts
+  const computeFinalScore = (totalTimeMs) => {
+    const timePenalty = Math.round(totalTimeMs / 100);
+    const deathPenalty = deaths * 500;
+    return Math.max(0, 10000 - timePenalty - deathPenalty + interceptBonuses);
+  };
+
   // Record completion and submit score exactly once when won
   useEffect(() => {
     if (gameState === GAME_STATE.WON && !recordedRef.current) {
       recordedRef.current = true;
-      // Use finalElapsedMs (ref-captured at win moment) for accurate scoring
-      const timeForScore = finalElapsedMs ?? elapsedMs;
-      const score = computeScore(timeForScore, deaths);
-      console.log('[WIN] Recording completion:', { timeForScore, deaths, score, levelId: level.id });
+      // finalElapsedMs now contains total accumulated play time across all attempts
+      const timeForScore = finalElapsedMs ?? totalElapsedMs;
+      const score = computeFinalScore(timeForScore);
+      console.log('[WIN] Recording completion:', { timeForScore, deaths, score, interceptBonuses, levelId: level.id });
       const newBest = recordCompletion(level.id, timeForScore, score);
       setIsNewBest(newBest);
 
@@ -143,13 +153,13 @@ export default function Game({ level, onLevelSelect, onNextLevel, onLeaderboard,
       setGlobalRank(null);
       setScoreSubmitted(false);
     }
-  }, [gameState, level.id, finalElapsedMs, elapsedMs, deaths, GAME_STATE.WON, GAME_STATE.READY]);
+  }, [gameState, level.id, finalElapsedMs, totalElapsedMs, deaths, interceptBonuses, GAME_STATE.WON, GAME_STATE.READY]);
 
   const handleNicknameSubmit = (name) => {
     setNickname(name);
     setShowNicknamePrompt(false);
-    const timeForScore = finalElapsedMs ?? elapsedMs;
-    const score = computeScore(timeForScore, deaths);
+    const timeForScore = finalElapsedMs ?? totalElapsedMs;
+    const score = computeFinalScore(timeForScore);
     console.log('[WIN] Nickname submitted, saving score:', { name, timeForScore, score, deaths });
     submitScore(level.id, timeForScore, name, score, deaths).then((result) => {
       console.log('[WIN] Score submitted after nickname:', result);
@@ -164,7 +174,16 @@ export default function Game({ level, onLevelSelect, onNextLevel, onLeaderboard,
     setShowNicknamePrompt(false);
   };
 
-  const score = gameState === GAME_STATE.WON ? computeScore(finalElapsedMs ?? elapsedMs, deaths) : 0;
+  // Final score at win — uses total accumulated play time
+  const winTimeMs = finalElapsedMs ?? totalElapsedMs;
+  const finalScore = gameState === GAME_STATE.WON ? computeFinalScore(winTimeMs) : 0;
+  const timePenalty = Math.round(winTimeMs / 100);
+  const deathPenalty = deaths * 500;
+
+  // Live score: uses total accumulated time (previous attempts + current) for persistent scoring
+  const liveScore = gameState === GAME_STATE.READY
+    ? 10000
+    : Math.max(0, 10000 - Math.round(totalElapsedMs / 100) - (deaths * 500) + interceptBonuses);
 
   return (
     <div className="flex flex-col h-full">
@@ -181,6 +200,8 @@ export default function Game({ level, onLevelSelect, onNextLevel, onLeaderboard,
         showSonarTooltip={showSonarTooltip}
         interceptsLeft={interceptsLeft}
         interceptMessage={interceptMessage}
+        liveScore={liveScore}
+        scoreEvents={scoreEvents}
       />
 
       {/* Game area */}
@@ -207,6 +228,7 @@ export default function Game({ level, onLevelSelect, onNextLevel, onLeaderboard,
             move={move}
             wakeTrail={wakeTrail}
             lastInterceptEvent={lastInterceptEvent}
+            scoreEvents={scoreEvents}
           />
 
           {gameState === GAME_STATE.DEAD && (
@@ -222,7 +244,10 @@ export default function Game({ level, onLevelSelect, onNextLevel, onLeaderboard,
             <WinOverlay
               levelName={levelName}
               elapsedMs={elapsedMs}
-              score={score}
+              score={finalScore}
+              timePenalty={timePenalty}
+              deathPenalty={deathPenalty}
+              interceptBonuses={interceptBonuses}
               attempts={attempts}
               deaths={deaths}
               isNewBest={isNewBest}
