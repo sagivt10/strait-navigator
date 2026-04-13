@@ -47,16 +47,17 @@ export default function GameBoard({
     const hudH = hud?.offsetHeight || 52;
     const padding = 8;
     const availW = window.innerWidth - padding;
+    const maxTile = isMobile ? 32 : 48;
     // On mobile, controls float over the map so don't subtract their height
     if (isMobile) {
       const availH = window.innerHeight - hudH - padding;
-      const size = Math.max(16, Math.min(Math.floor(availW / cols), Math.floor(availH / rows), 48));
+      const size = Math.max(16, Math.min(Math.floor(availW / cols), Math.floor(availH / rows), maxTile));
       setTileSize(size);
     } else {
       const controls = document.getElementById('mobile-controls');
       const controlsH = controls?.offsetHeight || 180;
       const availH = window.innerHeight - hudH - controlsH - padding;
-      const size = Math.max(16, Math.min(Math.floor(availW / cols), Math.floor(availH / rows), 48));
+      const size = Math.max(16, Math.min(Math.floor(availW / cols), Math.floor(availH / rows), maxTile));
       setTileSize(size);
     }
   }, [cols, rows]);
