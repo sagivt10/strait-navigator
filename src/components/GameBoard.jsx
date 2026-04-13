@@ -43,7 +43,9 @@ export default function GameBoard({
 
   const computeTileSize = useCallback(() => {
     const availW = window.innerWidth - 16;
-    const availH = window.innerHeight - 60 - 130 - 16;
+    const hudH = document.querySelector('.game-hud')?.offsetHeight || 60;
+    const controlsH = document.querySelector('.mobile-controls')?.offsetHeight || 130;
+    const availH = window.innerHeight - hudH - controlsH - 16;
     const maxByWidth = Math.floor(availW / cols);
     const maxByHeight = Math.floor(availH / rows);
     const size = Math.max(16, Math.min(maxByWidth, maxByHeight, 48));

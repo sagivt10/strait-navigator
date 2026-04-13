@@ -17,7 +17,7 @@ export default function MobileControls({ onMove, onRestart, onIntercept, interce
 
   return (
     <div
-      className="flex items-center justify-between px-4 py-2 shrink-0"
+      className="mobile-controls flex items-center justify-between px-4 py-2 shrink-0"
       style={{
         background: 'rgba(13, 33, 55, 0.95)',
         borderTop: '1px solid rgba(240, 165, 0, 0.3)',
