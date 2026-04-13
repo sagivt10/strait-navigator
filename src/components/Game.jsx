@@ -64,7 +64,7 @@ export default function Game({ level, onLevelSelect, onNextLevel, onLeaderboard,
     setMutedState(nowMuted);
   };
 
-  // How-to-play modal: show before Level 1 only, once ever
+  // How-to-play modal: show before Level 1 (once ever), or when ? button is clicked
   const [showHowToPlay, setShowHowToPlay] = useState(() => {
     if (level.id !== 1) return false;
     return !localStorage.getItem(HOW_TO_PLAY_KEY);
@@ -93,6 +93,10 @@ export default function Game({ level, onLevelSelect, onNextLevel, onLeaderboard,
   const dismissHowToPlay = () => {
     localStorage.setItem(HOW_TO_PLAY_KEY, '1');
     setShowHowToPlay(false);
+  };
+
+  const openHowToPlay = () => {
+    setShowHowToPlay(true);
   };
 
   // Record completion and submit score exactly once when won
@@ -148,6 +152,7 @@ export default function Game({ level, onLevelSelect, onNextLevel, onLeaderboard,
         onLevelSelect={onLevelSelect}
         muted={muted}
         onToggleMute={handleToggleMute}
+        onHelp={openHowToPlay}
         showSonarTooltip={showSonarTooltip}
       />
 

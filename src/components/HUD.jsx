@@ -1,6 +1,6 @@
 import { formatTime, getSonarColor } from '../game/engine';
 
-export default function HUD({ levelName, elapsedMs, sonarReading, gameState, GAME_STATE, onLevelSelect, showSonarTooltip, muted, onToggleMute }) {
+export default function HUD({ levelName, elapsedMs, sonarReading, gameState, GAME_STATE, onLevelSelect, showSonarTooltip, muted, onToggleMute, onHelp }) {
   const sonarColor = getSonarColor(sonarReading);
   const sonarLabel =
     sonarReading === 0
@@ -50,6 +50,24 @@ export default function HUD({ levelName, elapsedMs, sonarReading, gameState, GAM
           title={muted ? 'Unmute' : 'Mute'}
         >
           {muted ? '\u{1F507}' : '\u{1F50A}'}
+        </button>
+        <button
+          onClick={onHelp}
+          className="cursor-pointer"
+          style={{
+            fontSize: 13,
+            padding: '4px 7px',
+            background: 'rgba(240, 165, 0, 0.1)',
+            color: 'var(--color-ui-accent)',
+            border: '1px solid rgba(240, 165, 0, 0.2)',
+            borderRadius: 3,
+            fontWeight: 700,
+            fontFamily: 'var(--font-mono)',
+            lineHeight: 1,
+          }}
+          title="How to play"
+        >
+          ?
         </button>
         <div className="flex items-center gap-1">
           <span style={{ color: 'var(--color-ui-accent)', fontSize: 14 }}>&#9201;</span>
