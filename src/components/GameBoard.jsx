@@ -153,11 +153,27 @@ export default function GameBoard({
     return result;
   }, [cols, rows, landTiles, shallowTiles, visitedTiles, mines, endPos, tileReadings, revealedMines, tileSize, mineIconSize, portIconSize, droneIconSize, shipKey, dronePositions]);
 
+  // Tap-to-move: click on adjacent tile to move (mobile only)
+  const handleGridClick = useCallback((e) => {
+    if (window.innerWidth >= 768) return;
+    if (gameState !== GAME_STATE.PLAYING) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const col = Math.floor((e.clientX - rect.left) / tileSize);
+    const row = Math.floor((e.clientY - rect.top) / tileSize);
+    const dc = col - shipPos.col;
+    const dr = row - shipPos.row;
+    if (dc === 0 && dr === -1) move('up');
+    else if (dc === 0 && dr === 1) move('down');
+    else if (dc === -1 && dr === 0) move('left');
+    else if (dc === 1 && dr === 0) move('right');
+  }, [tileSize, shipPos, move, gameState, GAME_STATE]);
+
   return (
     <div
       ref={containerRef}
       className="relative mx-auto select-none"
       style={{ width: gridWidth, height: gridHeight }}
+      onClick={handleGridClick}
     >
       {tiles}
 
