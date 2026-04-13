@@ -75,6 +75,11 @@ const level5 = {
     '2,15','7,15',
     '3,16','6,16',
   ]),
+  // Drones on coastline land tiles — kill zone radius 1 (levels 1-5)
+  drones: [
+    { col: 3, row: 5 },  // Sanafir Island — blocks left channel
+    { col: 7, row: 8 },  // Tiran Island — blocks right channel
+  ],
 };
 
 export default level5;

@@ -1,6 +1,6 @@
 import { formatTime, getSonarColor } from '../game/engine';
 
-export default function HUD({ levelName, elapsedMs, sonarReading, gameState, GAME_STATE, onLevelSelect, showSonarTooltip, muted, onToggleMute, onHelp }) {
+export default function HUD({ levelName, elapsedMs, sonarReading, gameState, GAME_STATE, onLevelSelect, showSonarTooltip, muted, onToggleMute, onHelp, interceptsLeft, interceptMessage }) {
   const sonarColor = getSonarColor(sonarReading);
   const sonarLabel =
     sonarReading === 0
@@ -76,7 +76,7 @@ export default function HUD({ levelName, elapsedMs, sonarReading, gameState, GAM
               color:
                 gameState === GAME_STATE.WON
                   ? '#00cc88'
-                  : gameState === GAME_STATE.DEAD
+                  : (gameState === GAME_STATE.DEAD || gameState === GAME_STATE.DYING)
                   ? '#ff0000'
                   : 'var(--color-ui-text)',
               minWidth: 70,
@@ -102,8 +102,32 @@ export default function HUD({ levelName, elapsedMs, sonarReading, gameState, GAM
         {levelName}
       </div>
 
-      {/* Sonar reading */}
-      <div className="flex items-center gap-1 relative">
+      {/* Intercept + Sonar reading */}
+      <div className="flex items-center gap-2 relative">
+        <span
+          style={{
+            fontSize: 13,
+            color: interceptsLeft > 0 ? 'var(--color-ui-accent)' : 'var(--color-ui-text)',
+            opacity: interceptsLeft > 0 ? 1 : 0.3,
+            transition: 'all 0.2s',
+          }}
+          title={interceptsLeft > 0 ? 'Press SPACE to intercept a drone' : 'Intercept used'}
+        >
+          🎯 {interceptsLeft}
+        </span>
+        {interceptMessage && (
+          <span
+            style={{
+              fontSize: 11,
+              color: '#ff5500',
+              fontWeight: 700,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {interceptMessage}
+          </span>
+        )}
+        <span style={{ color: 'rgba(255,255,255,0.15)' }}>|</span>
         <span style={{ fontSize: 13, color: 'var(--color-ui-text)', opacity: 0.6 }}>SONAR:</span>
         <span
           style={{

@@ -1,4 +1,4 @@
-export default function MobileControls({ onMove, onRestart }) {
+export default function MobileControls({ onMove, onRestart, onIntercept, interceptsLeft }) {
   const btnStyle = {
     width: 48,
     height: 48,
@@ -23,13 +23,23 @@ export default function MobileControls({ onMove, onRestart }) {
         borderTop: '1px solid rgba(240, 165, 0, 0.3)',
       }}
     >
-      {/* D-pad */}
+      {/* D-pad with intercept in center */}
       <div className="grid gap-1" style={{ gridTemplateColumns: 'repeat(3, 48px)', gridTemplateRows: 'repeat(3, 48px)' }}>
         <div />
         <button style={btnStyle} onClick={() => onMove('up')}>&#9650;</button>
         <div />
         <button style={btnStyle} onClick={() => onMove('left')}>&#9664;</button>
-        <div />
+        <button
+          style={{
+            ...btnStyle,
+            fontSize: 22,
+            opacity: interceptsLeft > 0 ? 1 : 0.3,
+          }}
+          onClick={onIntercept}
+          disabled={interceptsLeft <= 0}
+        >
+          🎯
+        </button>
         <button style={btnStyle} onClick={() => onMove('right')}>&#9654;</button>
         <div />
         <button style={btnStyle} onClick={() => onMove('down')}>&#9660;</button>

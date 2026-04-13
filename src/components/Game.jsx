@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useGame } from '../game/useGame';
+import { computeScore } from '../game/engine';
 import { recordCompletion } from '../game/storage';
 import { getNickname, setNickname, submitScore, getRank } from '../game/supabase';
 import { startOceanAmbient, stopOceanAmbient, playSonarPing, playExplosion, playVictory, isMuted, toggleMute } from '../game/audio';
@@ -17,16 +18,27 @@ export default function Game({ level, onLevelSelect, onNextLevel, onLeaderboard,
     shipPos,
     shipAngle,
     mines,
+    activeDrones,
+    droneKillZones,
     visitedTiles,
     gameState,
+    deathCause,
+    killerDronePos,
     elapsedMs,
+    finalElapsedMs,
     attempts,
+    deaths,
     sonarPing,
     sonarReading,
     revealedMines,
     isFirstMove,
+    interceptsLeft,
+    interceptMessage,
+    lastInterceptEvent,
+    wakeTrail,
     move,
     restart,
+    intercept,
     GAME_STATE,
   } = useGame(level);
 
@@ -53,11 +65,11 @@ export default function Game({ level, onLevelSelect, onNextLevel, onLeaderboard,
     }
   }, [sonarPing]);
 
-  // Audio: explosion on death, victory horn on win
+  // Audio: explosion on dying (start of death sequence), victory horn on win
   useEffect(() => {
-    if (gameState === GAME_STATE.DEAD) playExplosion();
+    if (gameState === GAME_STATE.DYING) playExplosion();
     if (gameState === GAME_STATE.WON) playVictory();
-  }, [gameState, GAME_STATE.DEAD, GAME_STATE.WON]);
+  }, [gameState, GAME_STATE.DYING, GAME_STATE.WON]);
 
   const handleToggleMute = () => {
     const nowMuted = toggleMute();
@@ -103,15 +115,22 @@ export default function Game({ level, onLevelSelect, onNextLevel, onLeaderboard,
   useEffect(() => {
     if (gameState === GAME_STATE.WON && !recordedRef.current) {
       recordedRef.current = true;
-      const newBest = recordCompletion(level.id, elapsedMs);
+      // Use finalElapsedMs (ref-captured at win moment) for accurate scoring
+      const timeForScore = finalElapsedMs ?? elapsedMs;
+      const score = computeScore(timeForScore, deaths);
+      console.log('[WIN] Recording completion:', { timeForScore, deaths, score, levelId: level.id });
+      const newBest = recordCompletion(level.id, timeForScore, score);
       setIsNewBest(newBest);
 
       const nickname = getNickname();
+      console.log('[WIN] Nickname:', nickname ? nickname : '(none — showing prompt)');
       if (nickname) {
-        submitScore(level.id, elapsedMs, nickname).then(() => {
+        submitScore(level.id, timeForScore, nickname, score, deaths).then((result) => {
+          console.log('[WIN] Score submitted:', result);
           setScoreSubmitted(true);
         });
-        getRank(level.id, elapsedMs).then((rank) => {
+        getRank(level.id, score, timeForScore).then((rank) => {
+          console.log('[WIN] Global rank:', rank);
           setGlobalRank(rank);
         });
       } else {
@@ -124,15 +143,19 @@ export default function Game({ level, onLevelSelect, onNextLevel, onLeaderboard,
       setGlobalRank(null);
       setScoreSubmitted(false);
     }
-  }, [gameState, level.id, elapsedMs, GAME_STATE.WON, GAME_STATE.READY]);
+  }, [gameState, level.id, finalElapsedMs, elapsedMs, deaths, GAME_STATE.WON, GAME_STATE.READY]);
 
   const handleNicknameSubmit = (name) => {
     setNickname(name);
     setShowNicknamePrompt(false);
-    submitScore(level.id, elapsedMs, name).then(() => {
+    const timeForScore = finalElapsedMs ?? elapsedMs;
+    const score = computeScore(timeForScore, deaths);
+    console.log('[WIN] Nickname submitted, saving score:', { name, timeForScore, score, deaths });
+    submitScore(level.id, timeForScore, name, score, deaths).then((result) => {
+      console.log('[WIN] Score submitted after nickname:', result);
       setScoreSubmitted(true);
     });
-    getRank(level.id, elapsedMs).then((rank) => {
+    getRank(level.id, score, timeForScore).then((rank) => {
       setGlobalRank(rank);
     });
   };
@@ -140,6 +163,8 @@ export default function Game({ level, onLevelSelect, onNextLevel, onLeaderboard,
   const handleNicknameCancel = () => {
     setShowNicknamePrompt(false);
   };
+
+  const score = gameState === GAME_STATE.WON ? computeScore(finalElapsedMs ?? elapsedMs, deaths) : 0;
 
   return (
     <div className="flex flex-col h-full">
@@ -154,12 +179,14 @@ export default function Game({ level, onLevelSelect, onNextLevel, onLeaderboard,
         onToggleMute={handleToggleMute}
         onHelp={openHowToPlay}
         showSonarTooltip={showSonarTooltip}
+        interceptsLeft={interceptsLeft}
+        interceptMessage={interceptMessage}
       />
 
       {/* Game area */}
       <div
         className={`flex-1 flex items-center justify-center overflow-hidden relative ${
-          gameState === GAME_STATE.DEAD ? 'screen-shake' : ''
+          gameState === GAME_STATE.DYING ? 'screen-shake' : ''
         }`}
         style={{ background: 'var(--color-ocean-deep)' }}
       >
@@ -169,17 +196,23 @@ export default function Game({ level, onLevelSelect, onNextLevel, onLeaderboard,
             shipPos={shipPos}
             shipAngle={shipAngle}
             mines={mines}
+            activeDrones={activeDrones}
             visitedTiles={visitedTiles}
             sonarPing={sonarPing}
             revealedMines={revealedMines}
             gameState={gameState}
+            deathCause={deathCause}
+            killerDronePos={killerDronePos}
             GAME_STATE={GAME_STATE}
             move={move}
+            wakeTrail={wakeTrail}
+            lastInterceptEvent={lastInterceptEvent}
           />
 
           {gameState === GAME_STATE.DEAD && (
             <DeathOverlay
               attempts={attempts}
+              deathCause={deathCause}
               onRestart={restart}
               onLevelSelect={onLevelSelect}
             />
@@ -189,12 +222,13 @@ export default function Game({ level, onLevelSelect, onNextLevel, onLeaderboard,
             <WinOverlay
               levelName={levelName}
               elapsedMs={elapsedMs}
+              score={score}
               attempts={attempts}
+              deaths={deaths}
               isNewBest={isNewBest}
               globalRank={globalRank}
               onRestart={restart}
               onNextLevel={onNextLevel}
-              onLevelSelect={onLevelSelect}
               onLeaderboard={onLeaderboard}
               hasNextLevel={hasNextLevel}
             />
@@ -202,7 +236,7 @@ export default function Game({ level, onLevelSelect, onNextLevel, onLeaderboard,
         </div>
       </div>
 
-      <MobileControls onMove={move} onRestart={restart} />
+      <MobileControls onMove={move} onRestart={restart} onIntercept={intercept} interceptsLeft={interceptsLeft} />
 
       {showHowToPlay && <HowToPlay onDismiss={dismissHowToPlay} />}
 

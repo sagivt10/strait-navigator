@@ -157,8 +157,8 @@ export default function Leaderboard({ initialLevelId, onBack }) {
               >
                 <th className="text-left py-2 px-2">#</th>
                 <th className="text-left py-2 px-2">Captain</th>
+                <th className="text-right py-2 px-2">Score</th>
                 <th className="text-right py-2 px-2">Time</th>
-                <th className="text-right py-2 px-2">Date</th>
               </tr>
             </thead>
             <tbody>
@@ -194,15 +194,16 @@ export default function Leaderboard({ initialLevelId, onBack }) {
                         i === 0
                           ? 'var(--color-ui-accent)'
                           : 'var(--color-ui-text)',
+                      fontWeight: i === 0 ? 700 : 400,
                     }}
                   >
-                    {formatTime(score.time_ms)}
+                    {(score.score ?? 0).toLocaleString()}
                   </td>
                   <td
                     className="py-2 px-2 text-right"
-                    style={{ opacity: 0.4, fontSize: 12 }}
+                    style={{ opacity: 0.5, fontSize: 12 }}
                   >
-                    {new Date(score.created_at).toLocaleDateString()}
+                    {formatTime(score.time_ms)}
                   </td>
                 </tr>
               ))}

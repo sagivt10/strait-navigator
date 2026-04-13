@@ -20,57 +20,117 @@ export function setNickname(name) {
 // --- Leaderboard API ---
 
 /**
- * Submit a score. Returns the inserted row or null on error.
+ * Submit a score. Includes score and deaths alongside time_ms.
+ * Returns the inserted row or null on error.
  */
-export async function submitScore(levelId, timeMs, playerName) {
+export async function submitScore(levelId, timeMs, playerName, score, deaths) {
+  const fullPayload = {
+    player_name: playerName,
+    level_id: levelId,
+    time_ms: timeMs,
+    score: score,
+    deaths: deaths,
+  };
+  console.log('[Supabase] submitScore called with:', fullPayload);
+
+  // Try with all columns first (score + deaths)
   const { data, error } = await supabase
     .from('scores')
-    .insert({
-      player_name: playerName,
-      level_id: levelId,
-      time_ms: timeMs,
-    })
+    .insert(fullPayload)
     .select()
     .single();
 
-  if (error) {
-    console.error('[Leaderboard] Submit error:', error.message);
-    return null;
+  if (!error) {
+    console.log('[Supabase] Submit success:', data);
+    return data;
   }
-  return data;
+
+  // If columns don't exist yet, fall back to base columns
+  if (error.message && error.message.includes('column')) {
+    console.warn('[Supabase] Falling back to base columns (score/deaths columns not in DB yet):', error.message);
+    const { data: fallbackData, error: fallbackError } = await supabase
+      .from('scores')
+      .insert({
+        player_name: playerName,
+        level_id: levelId,
+        time_ms: timeMs,
+      })
+      .select()
+      .single();
+
+    if (fallbackError) {
+      console.error('[Supabase] Fallback submit error:', fallbackError.message, fallbackError);
+      return null;
+    }
+    console.log('[Supabase] Fallback submit success:', fallbackData);
+    return fallbackData;
+  }
+
+  console.error('[Supabase] Submit error:', error.message, error);
+  return null;
 }
 
 /**
  * Fetch top 10 scores for a given level.
+ * Tries to sort by score desc; falls back to time_ms asc if score column doesn't exist.
  */
 export async function getLeaderboard(levelId) {
+  // Try with score column first
   const { data, error } = await supabase
+    .from('scores')
+    .select('id, player_name, level_id, time_ms, score, deaths, created_at')
+    .eq('level_id', levelId)
+    .order('score', { ascending: false })
+    .limit(10);
+
+  if (!error) return data || [];
+
+  // Fall back to time-based sorting if score column doesn't exist
+  console.warn('[Leaderboard] Falling back to time-based sort:', error.message);
+  const { data: fallbackData, error: fallbackError } = await supabase
     .from('scores')
     .select('id, player_name, level_id, time_ms, created_at')
     .eq('level_id', levelId)
     .order('time_ms', { ascending: true })
     .limit(10);
 
-  if (error) {
-    console.error('[Leaderboard] Fetch error:', error.message);
+  if (fallbackError) {
+    console.error('[Leaderboard] Fetch error:', fallbackError.message);
     return [];
   }
-  return data || [];
+  return fallbackData || [];
 }
 
 /**
- * Get the rank of a specific time on a level (1-indexed).
+ * Get the rank of a specific score on a level (1-indexed).
+ * Tries score-based ranking; falls back to time-based if score column doesn't exist.
  */
-export async function getRank(levelId, timeMs) {
+export async function getRank(levelId, score, timeMs) {
+  // Try score-based ranking first
   const { count, error } = await supabase
     .from('scores')
     .select('id', { count: 'exact', head: true })
     .eq('level_id', levelId)
-    .lt('time_ms', timeMs);
+    .gt('score', score);
 
-  if (error) {
-    console.error('[Leaderboard] Rank error:', error.message);
-    return null;
+  if (!error) return (count ?? 0) + 1;
+
+  // Fall back to time-based ranking
+  if (timeMs != null) {
+    console.warn('[Leaderboard] Falling back to time-based rank:', error.message);
+    const { count: timeCount, error: timeError } = await supabase
+      .from('scores')
+      .select('id', { count: 'exact', head: true })
+      .eq('level_id', levelId)
+      .lt('time_ms', timeMs);
+
+    if (timeError) {
+      console.error('[Leaderboard] Rank error:', timeError.message);
+      return null;
+    }
+    return (timeCount ?? 0) + 1;
   }
-  return (count ?? 0) + 1;
+
+  console.error('[Leaderboard] Rank error:', error.message);
+  return null;
 }

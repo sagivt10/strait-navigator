@@ -4,6 +4,11 @@ import Ship from './Ship';
 import SonarPing from './SonarPing';
 import Explosion from './Explosion';
 import PortIcon from './PortIcon';
+import WakeTrail from './WakeTrail';
+import DroneIntercept from './DroneIntercept';
+import DroneStrike from './DroneStrike';
+import DroneIcon from './DroneIcon';
+import Confetti from './Confetti';
 
 // Heat-map colors by mine proximity
 function sonarTileColor(count) {
@@ -18,12 +23,17 @@ export default function GameBoard({
   shipPos,
   shipAngle,
   mines,
+  activeDrones,
   visitedTiles,
   sonarPing,
   revealedMines,
   gameState,
+  deathCause,
+  killerDronePos,
   GAME_STATE,
   move,
+  wakeTrail,
+  lastInterceptEvent,
 }) {
   const { cols, rows, landTiles, shallowTiles, endPos } = level;
   const containerRef = useRef(null);
@@ -57,8 +67,14 @@ export default function GameBoard({
     return readings;
   }, [visitedTiles, mines]);
 
+  const dronePositions = useMemo(() => {
+    const droneList = activeDrones || [];
+    return new Set(droneList.map((d) => `${d.col},${d.row}`));
+  }, [activeDrones]);
+
   const mineIconSize = Math.max(14, Math.round(24 * (tileSize / 40)));
   const portIconSize = Math.max(16, Math.round(28 * (tileSize / 40)));
+  const droneIconSize = Math.max(12, Math.round(18 * (tileSize / 40)));
   const shipKey = `${shipPos.col},${shipPos.row}`;
 
   // Render grid tiles
@@ -119,6 +135,11 @@ export default function GameBoard({
               </svg>
             )}
 
+            {/* Drone icon on land tile */}
+            {dronePositions.has(key) && (
+              <DroneIcon size={droneIconSize} />
+            )}
+
             {/* Port/destination icon */}
             {isEnd && <PortIcon size={portIconSize} />}
           </div>
@@ -126,7 +147,7 @@ export default function GameBoard({
       }
     }
     return result;
-  }, [cols, rows, landTiles, shallowTiles, visitedTiles, mines, endPos, tileReadings, revealedMines, tileSize, mineIconSize, portIconSize, shipKey]);
+  }, [cols, rows, landTiles, shallowTiles, visitedTiles, mines, endPos, tileReadings, revealedMines, tileSize, mineIconSize, portIconSize, droneIconSize, shipKey, dronePositions]);
 
   return (
     <div
@@ -135,6 +156,9 @@ export default function GameBoard({
       style={{ width: gridWidth, height: gridHeight }}
     >
       {tiles}
+
+      {/* Wake trail behind ship */}
+      <WakeTrail trail={wakeTrail} tileSize={tileSize} />
 
       {sonarPing && (
         <SonarPing
@@ -145,21 +169,56 @@ export default function GameBoard({
         />
       )}
 
-      {gameState !== GAME_STATE.DEAD && (
+      {gameState !== GAME_STATE.DYING && gameState !== GAME_STATE.DEAD && (
         <Ship
           col={shipPos.col}
           row={shipPos.row}
           angle={shipAngle}
           tileSize={tileSize}
+          originFlag={level.originFlag}
         />
       )}
 
-      {gameState === GAME_STATE.DEAD && (
+      {/* Explosion animations play during DYING phase */}
+      {gameState === GAME_STATE.DYING && deathCause === 'mine' && (
         <Explosion
           col={shipPos.col}
           row={shipPos.row}
           tileSize={tileSize}
+          variant="mine"
         />
+      )}
+
+      {gameState === GAME_STATE.DYING && deathCause === 'drone' && killerDronePos && (
+        <DroneStrike
+          dronePos={killerDronePos}
+          shipPos={shipPos}
+          tileSize={tileSize}
+        />
+      )}
+
+      {gameState === GAME_STATE.DYING && deathCause === 'drone' && !killerDronePos && (
+        <Explosion
+          col={shipPos.col}
+          row={shipPos.row}
+          tileSize={tileSize}
+          variant="drone"
+        />
+      )}
+
+      {/* Drone intercept missile + explosion */}
+      {lastInterceptEvent && (
+        <DroneIntercept
+          key={lastInterceptEvent.key}
+          from={lastInterceptEvent.from}
+          to={lastInterceptEvent.to}
+          tileSize={tileSize}
+        />
+      )}
+
+      {/* Win confetti */}
+      {gameState === GAME_STATE.WON && (
+        <Confetti width={gridWidth} height={gridHeight} />
       )}
     </div>
   );

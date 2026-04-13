@@ -104,6 +104,12 @@ const level6 = {
     '2,19','7,19',
     '2,20','7,20',
   ]),
+  // Drones on coastline land tiles — kill zone radius 2 (levels 6-10)
+  drones: [
+    { col: 6, row: 3 },  // right canal wall — narrows upper passage
+    { col: 1, row: 10 }, // left canal wall — threatens mid-canal
+    { col: 2, row: 16 }, // lower left wall — guards southern approach
+  ],
 };
 
 export default level6;

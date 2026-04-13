@@ -63,6 +63,12 @@ const level3 = {
     '1,13','12,13',
     '2,14','11,14',
   ]),
+  // Drones on coastline land tiles — kill zone radius 1 (levels 1-5)
+  drones: [
+    { col: 3, row: 4 },  // upper-left island pair
+    { col: 10, row: 4 }, // upper-right island pair
+    { col: 6, row: 8 },  // central rock
+  ],
 };
 
 export default level3;

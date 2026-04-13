@@ -75,6 +75,26 @@ export default function HowToPlay({ onDismiss }) {
             </span>
           </div>
 
+          {/* Drone */}
+          <div className="flex items-center gap-3">
+            <div className="shrink-0 flex items-center justify-center" style={{ width: 32, height: 32, fontSize: 22 }}>
+              🚁
+            </div>
+            <span style={{ fontFamily: 'var(--font-sans)', fontSize: 14, color: 'var(--color-ui-text)' }}>
+              <b style={{ color: '#ff5500' }}>Drones</b> patrol the coastlines — stay away from them or you'll be shot down.
+            </span>
+          </div>
+
+          {/* Intercept */}
+          <div className="flex items-center gap-3">
+            <div className="shrink-0 flex items-center justify-center" style={{ width: 32, height: 32, fontSize: 22 }}>
+              🎯
+            </div>
+            <span style={{ fontFamily: 'var(--font-sans)', fontSize: 14, color: 'var(--color-ui-text)' }}>
+              You have <b style={{ color: 'var(--color-ui-accent)' }}>ONE</b> intercept missile per level. Press <b style={{ color: 'var(--color-ui-accent)' }}>SPACE</b> (or tap 🎯) when close to a drone to destroy it. Your intercept is only used if a drone is nearby — if nothing is in range, you keep it.
+            </span>
+          </div>
+
           {/* Sonar range diagram */}
           <div style={{ marginTop: 4 }}>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--color-ui-accent)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 }}>

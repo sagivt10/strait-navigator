@@ -1,24 +1,45 @@
 import { useState } from 'react';
 import { formatTime } from '../game/engine';
 
-export function DeathOverlay({ attempts, onRestart, onLevelSelect }) {
+export function DeathOverlay({ attempts, deathCause, onRestart, onLevelSelect }) {
+  const isDrone = deathCause === 'drone';
+
   return (
     <div
       className="absolute inset-0 flex items-center justify-center z-50"
-      style={{ background: 'rgba(13, 33, 55, 0.85)' }}
+      style={{
+        background: 'rgba(13, 33, 55, 0.85)',
+        animation: 'death-overlay-fade-in 400ms ease-out forwards',
+      }}
     >
       <div className="text-center">
         <div
           style={{
             fontFamily: 'var(--font-display)',
-            fontSize: 48,
-            color: '#ff0000',
-            marginBottom: 8,
-            textShadow: '0 0 20px rgba(255,0,0,0.5)',
+            fontSize: isDrone ? 36 : 48,
+            color: isDrone ? '#ff5500' : '#ff0000',
+            marginBottom: 4,
+            textShadow: `0 0 20px ${isDrone ? 'rgba(255,85,0,0.5)' : 'rgba(255,0,0,0.5)'}`,
           }}
         >
-          MINE STRUCK
+          {isDrone ? 'DRONE STRIKE' : 'MINE STRUCK'}
         </div>
+        {isDrone && (
+          <div
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 14,
+              color: 'var(--color-ui-text)',
+              marginBottom: 8,
+              opacity: 0.8,
+              maxWidth: 260,
+              margin: '0 auto 8px',
+              letterSpacing: 1,
+            }}
+          >
+            DIRECT HIT
+          </div>
+        )}
         <div
           style={{
             fontFamily: 'var(--font-mono)',
@@ -73,19 +94,20 @@ export function DeathOverlay({ attempts, onRestart, onLevelSelect }) {
 export function WinOverlay({
   levelName,
   elapsedMs,
+  score,
   attempts,
+  deaths,
   isNewBest,
   globalRank,
   onRestart,
   onNextLevel,
-  onLevelSelect,
   onLeaderboard,
   hasNextLevel,
 }) {
   const [copied, setCopied] = useState(false);
 
   const timeStr = formatTime(elapsedMs);
-  const shareText = `I navigated the ${levelName} in ${timeStr} without hitting a mine \u{1F6A2}\u{1F4A5} Can you beat it? straitnavigator.com`;
+  const shareText = `I scored ${score.toLocaleString()} on ${levelName} (${timeStr}, ${deaths} deaths) \u{1F6A2}\u{1F4A5} Can you beat it? straitnavigator.com`;
 
   const handleShare = async () => {
     try {
@@ -106,17 +128,17 @@ export function WinOverlay({
 
   return (
     <div
-      className="absolute inset-0 flex items-center justify-center z-50"
+      className="fixed inset-0 flex items-center justify-center z-50"
       style={{ background: 'rgba(13, 33, 55, 0.85)' }}
     >
-      <div className="text-center px-4">
-        <div style={{ fontSize: 40, marginBottom: 4 }}>&#9875;</div>
+      <div className="text-center px-3" style={{ overflowY: 'auto', maxHeight: '85vh', paddingBottom: 16 }}>
+        <div style={{ fontSize: 32, marginBottom: 2 }}>&#9875;</div>
         <div
           style={{
             fontFamily: 'var(--font-display)',
-            fontSize: 42,
+            fontSize: 36,
             color: '#00cc88',
-            marginBottom: 8,
+            marginBottom: 4,
             textShadow: '0 0 20px rgba(0,204,136,0.4)',
           }}
         >
@@ -125,9 +147,9 @@ export function WinOverlay({
         <div
           style={{
             fontFamily: 'var(--font-display)',
-            fontSize: 20,
+            fontSize: 18,
             color: 'var(--color-ui-accent)',
-            marginBottom: 16,
+            marginBottom: 10,
           }}
         >
           {levelName}
@@ -135,12 +157,37 @@ export function WinOverlay({
         <div
           style={{
             fontFamily: 'var(--font-mono)',
-            fontSize: 28,
-            color: 'var(--color-ui-text)',
-            marginBottom: 4,
+            fontSize: 32,
+            color: 'var(--color-ui-accent)',
+            marginBottom: 2,
+            fontWeight: 700,
           }}
         >
-          {timeStr}
+          {score.toLocaleString()}
+        </div>
+        <div
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 11,
+            color: 'var(--color-ui-text)',
+            opacity: 0.4,
+            textTransform: 'uppercase',
+            letterSpacing: 1,
+            marginBottom: 6,
+          }}
+        >
+          SCORE
+        </div>
+        <div
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 16,
+            color: 'var(--color-ui-text)',
+            marginBottom: 2,
+            opacity: 0.8,
+          }}
+        >
+          {timeStr} &middot; {deaths === 0 ? 'No deaths' : `${deaths} death${deaths > 1 ? 's' : ''}`}
         </div>
 
         {/* Global rank */}
@@ -166,7 +213,7 @@ export function WinOverlay({
               marginBottom: 4,
             }}
           >
-            NEW BEST TIME!
+            NEW BEST SCORE!
           </div>
         )}
         <div
@@ -175,7 +222,7 @@ export function WinOverlay({
             fontSize: 14,
             color: 'var(--color-ui-text)',
             opacity: 0.5,
-            marginBottom: 20,
+            marginBottom: 12,
           }}
         >
           {attempts > 1 ? `Completed in ${attempts} attempts` : 'First try!'}
@@ -184,11 +231,11 @@ export function WinOverlay({
         {/* Share button */}
         <button
           onClick={handleShare}
-          className="cursor-pointer mb-3 block mx-auto"
+          className="cursor-pointer mb-2 block mx-auto"
           style={{
             fontFamily: 'var(--font-mono)',
-            fontSize: 14,
-            padding: '10px 24px',
+            fontSize: 13,
+            padding: '8px 20px',
             background: copied ? 'rgba(0,204,136,0.2)' : 'rgba(240,165,0,0.15)',
             color: copied ? '#00cc88' : 'var(--color-ui-accent)',
             border: `1px solid ${copied ? 'rgba(0,204,136,0.4)' : 'rgba(240,165,0,0.3)'}`,
@@ -200,15 +247,15 @@ export function WinOverlay({
         </button>
 
         {/* Action buttons */}
-        <div className="flex items-center gap-3 justify-center flex-wrap mt-3">
+        <div className="flex items-center gap-2 justify-center flex-wrap mt-2">
           {hasNextLevel && (
             <button
               onClick={onNextLevel}
               className="cursor-pointer"
               style={{
                 fontFamily: 'var(--font-mono)',
-                fontSize: 16,
-                padding: '12px 32px',
+                fontSize: 15,
+                padding: '10px 28px',
                 background: 'var(--color-ui-accent)',
                 color: 'var(--color-ui-bg)',
                 border: 'none',
@@ -225,8 +272,8 @@ export function WinOverlay({
             className="cursor-pointer"
             style={{
               fontFamily: 'var(--font-mono)',
-              fontSize: 14,
-              padding: '12px 20px',
+              fontSize: 13,
+              padding: '10px 16px',
               background: 'rgba(240,165,0,0.1)',
               color: 'var(--color-ui-accent)',
               border: '1px solid rgba(240,165,0,0.25)',
@@ -240,8 +287,8 @@ export function WinOverlay({
             className="cursor-pointer"
             style={{
               fontFamily: 'var(--font-mono)',
-              fontSize: 14,
-              padding: '12px 20px',
+              fontSize: 13,
+              padding: '10px 16px',
               background: 'transparent',
               color: 'var(--color-ui-text)',
               border: '1px solid rgba(255,255,255,0.2)',
@@ -250,22 +297,6 @@ export function WinOverlay({
             }}
           >
             REPLAY [R]
-          </button>
-          <button
-            onClick={onLevelSelect}
-            className="cursor-pointer"
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 14,
-              padding: '12px 20px',
-              background: 'transparent',
-              color: 'var(--color-ui-text)',
-              border: '1px solid rgba(255,255,255,0.2)',
-              borderRadius: 4,
-              opacity: 0.7,
-            }}
-          >
-            MISSIONS
           </button>
         </div>
       </div>

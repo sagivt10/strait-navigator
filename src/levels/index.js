@@ -14,8 +14,8 @@ export const playableLevels = [level1, level2, level3, level4, level5, level6, l
 
 // Metadata for all 20 levels (used in level select — levels 11-20 are locked/coming soon)
 export const allLevelsMeta = [
-  { id: 1, name: 'Strait of Hormuz', subtitle: 'Iran — Oman', originFlag: '🇮🇷', destFlag: '🇴🇲', distance: 90, difficulty: 1, cols: 10, rows: 16, mineCount: 12 },
-  { id: 2, name: 'Strait of Hormuz — Wide Route', subtitle: 'Iran — UAE', originFlag: '🇮🇷', destFlag: '🇦🇪', distance: 120, difficulty: 1, cols: 12, rows: 16, mineCount: 16 },
+  { id: 1, name: 'Strait of Hormuz', subtitle: 'US Navy — Persian Gulf Operations', originFlag: '🇺🇸', destFlag: '🇴🇲', distance: 90, difficulty: 1, cols: 10, rows: 16, mineCount: 12 },
+  { id: 2, name: 'Strait of Hormuz — Wide Route', subtitle: 'US Navy — Persian Gulf Operations', originFlag: '🇺🇸', destFlag: '🇦🇪', distance: 120, difficulty: 1, cols: 12, rows: 16, mineCount: 16 },
   { id: 3, name: 'Gulf of Oman', subtitle: 'Open Water', originFlag: '🇴🇲', destFlag: '🇮🇷', distance: 340, difficulty: 2, cols: 14, rows: 16, mineCount: 18 },
   { id: 4, name: 'Bab el-Mandeb', subtitle: 'Yemen — Djibouti', originFlag: '🇩🇯', destFlag: '🇾🇪', distance: 20, difficulty: 2, cols: 12, rows: 18, mineCount: 20 },
   { id: 5, name: 'Strait of Tiran', subtitle: 'Red Sea Entry', originFlag: '🇪🇬', destFlag: '🇸🇦', distance: 13, difficulty: 2, cols: 10, rows: 18, mineCount: 22 },

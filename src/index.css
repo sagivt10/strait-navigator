@@ -33,26 +33,32 @@ body {
   flex-direction: column;
 }
 
-/* Sonar ping animation */
+/* Sonar ping animation — dual color fade from accent yellow to safe green to transparent */
 @keyframes sonar-ping {
   0% {
     transform: scale(0.5);
-    opacity: 0.8;
+    opacity: 0.9;
     border-color: var(--color-ui-accent);
+    box-shadow: 0 0 6px var(--color-ui-accent);
+  }
+  50% {
+    border-color: var(--color-safe);
+    box-shadow: 0 0 4px var(--color-safe);
   }
   100% {
-    transform: scale(2.5);
+    transform: scale(2.8);
     opacity: 0;
-    border-color: var(--color-safe);
+    border-color: transparent;
+    box-shadow: none;
   }
 }
 
 .sonar-ping {
-  animation: sonar-ping 0.6s ease-out forwards;
+  animation: sonar-ping 0.65s ease-out forwards;
 }
 
 .sonar-ping-delayed {
-  animation: sonar-ping 0.6s ease-out 0.15s forwards;
+  animation: sonar-ping 0.65s ease-out 0.15s forwards;
 }
 
 /* Explosion animation */
@@ -84,6 +90,12 @@ body {
   10% { opacity: 1; transform: translateY(0); }
   75% { opacity: 1; }
   100% { opacity: 0; }
+}
+
+/* Death overlay fade-in */
+@keyframes death-overlay-fade-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
 }
 
 /* Ship transition */

@@ -79,6 +79,12 @@ const level4 = {
     '3,15','8,15',
     '3,16','8,16',
   ]),
+  // Drones on coastline land tiles — kill zone radius 1 (levels 1-5)
+  drones: [
+    { col: 9, row: 1 },  // Yemen coast — guards upper strait
+    { col: 4, row: 7 },  // Perim Island — blocks central passage
+    { col: 5, row: 12 }, // reef — threatens mid-channel
+  ],
 };
 
 export default level4;

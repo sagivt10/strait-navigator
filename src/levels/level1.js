@@ -4,8 +4,8 @@
 const level1 = {
   id: 1,
   name: 'Strait of Hormuz',
-  subtitle: 'Iran — Oman',
-  originFlag: '🇮🇷',
+  subtitle: 'US Navy — Persian Gulf Operations',
+  originFlag: '🇺🇸',
   destFlag: '🇴🇲',
   distance: 90,
   difficulty: 1,
@@ -74,6 +74,11 @@ const level1 = {
     '2,13', '2,14', '7,14',
   ]),
   landPolygons: [],
+  // Drones on coastline land tiles — kill zone radius 1 (levels 1-5)
+  drones: [
+    { col: 5, row: 3 },  // small island mid-channel — blocks direct north route
+    { col: 3, row: 7 },  // mid-strait island — threatens left passage
+  ],
 };
 
 export default level1;

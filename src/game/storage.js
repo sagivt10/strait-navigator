@@ -24,20 +24,28 @@ export function getBestTime(levelId) {
 }
 
 /**
- * Record a level completion. Saves best time if it's a new record.
- * Returns true if it's a new best time.
+ * Record a level completion. Saves best score and best time.
+ * Returns true if it's a new best score.
  */
-export function recordCompletion(levelId, timeMs) {
+export function recordCompletion(levelId, timeMs, score) {
   const progress = getProgress();
   const key = `level_${levelId}`;
   const existing = progress[key];
 
-  if (!existing || timeMs < existing.bestTime) {
-    progress[key] = { bestTime: timeMs, completedAt: Date.now() };
+  const isNewBest = !existing || score > (existing.bestScore ?? 0);
+  if (isNewBest) {
+    progress[key] = {
+      bestTime: existing ? Math.min(timeMs, existing.bestTime) : timeMs,
+      bestScore: score,
+      completedAt: Date.now(),
+    };
     saveProgress(progress);
-    return true;
+  } else if (timeMs < existing.bestTime) {
+    // Not a new best score, but a faster time — still save the time
+    progress[key] = { ...existing, bestTime: timeMs };
+    saveProgress(progress);
   }
-  return false;
+  return isNewBest;
 }
 
 /**

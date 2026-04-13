@@ -85,6 +85,13 @@ const level10 = {
     '1,17','11,17','13,17','18,17',
     '2,18','3,18','11,18','13,18','17,18',
   ]),
+  // Drones on coastline land tiles — kill zone radius 2 (levels 6-10)
+  drones: [
+    { col: 3, row: 4 },  // west island cluster
+    { col: 10, row: 7 }, // central cluster — threatens mid-sea
+    { col: 14, row: 9 }, // east rock — blocks eastern route
+    { col: 7, row: 15 }, // south cluster — guards lower passage
+  ],
 };
 
 export default level10;

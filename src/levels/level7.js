@@ -75,6 +75,13 @@ const level7 = {
     '1,17','10,17',
     '2,18','9,18',
   ]),
+  // Drones on coastline land tiles — kill zone radius 2 (levels 6-10)
+  drones: [
+    { col: 3, row: 4 },  // rocky outcrop — blocks upper left
+    { col: 9, row: 7 },  // right narrowing rocks
+    { col: 5, row: 10 }, // central reef — threatens mid-strait
+    { col: 1, row: 13 }, // side outcrop — guards lower left
+  ],
 };
 
 export default level7;

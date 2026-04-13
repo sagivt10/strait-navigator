@@ -15,10 +15,50 @@ function seededRng(seed) {
 }
 
 /**
- * BFS from startPos to endPos through water tiles that are not mines or land.
- * Returns true if a valid path exists.
+ * Compute score: higher is better.
+ * score = max(0, 10000 - (elapsedMs / 100) - (deaths * 500))
  */
-function hasValidPath(cols, rows, landTiles, mines, startPos, endPos) {
+export function computeScore(elapsedMs, deaths) {
+  return Math.max(0, Math.round(10000 - (elapsedMs / 100) - (deaths * 500)));
+}
+
+/**
+ * Compute the set of water tiles that fall within each drone's kill zone.
+ * Kill radius is 1 for levels 1-5, 2 for levels 6-10.
+ * Optional droneList overrides level.drones (for intercept system).
+ */
+export function computeDroneKillZones(level, droneList) {
+  const drones = droneList || level.drones;
+  const { landTiles, cols, rows, id } = level;
+  if (!drones || drones.length === 0) return new Set();
+
+  const radius = id <= 5 ? 1 : 2;
+  const killZones = new Set();
+
+  for (const drone of drones) {
+    for (let dc = -radius; dc <= radius; dc++) {
+      for (let dr = -radius; dr <= radius; dr++) {
+        if (Math.abs(dc) + Math.abs(dr) > radius) continue;
+        if (dc === 0 && dr === 0) continue;
+        const c = drone.col + dc;
+        const r = drone.row + dr;
+        if (c < 0 || c >= cols || r < 0 || r >= rows) continue;
+        const key = `${c},${r}`;
+        if (!landTiles.has(key)) {
+          killZones.add(key);
+        }
+      }
+    }
+  }
+
+  return killZones;
+}
+
+/**
+ * BFS from startPos to endPos through water tiles that are not mines, land,
+ * or drone kill zones. Returns true if a valid path exists.
+ */
+function hasValidPath(cols, rows, landTiles, mines, startPos, endPos, blocked = new Set()) {
   const startKey = `${startPos.col},${startPos.row}`;
   const endKey = `${endPos.col},${endPos.row}`;
   const visited = new Set([startKey]);
@@ -35,7 +75,7 @@ function hasValidPath(cols, rows, landTiles, mines, startPos, endPos) {
       const nr = r + dr;
       if (nc < 0 || nc >= cols || nr < 0 || nr >= rows) continue;
       const nk = `${nc},${nr}`;
-      if (visited.has(nk) || landTiles.has(nk) || mines.has(nk)) continue;
+      if (visited.has(nk) || landTiles.has(nk) || mines.has(nk) || blocked.has(nk)) continue;
       visited.add(nk);
       queue.push(nk);
     }
@@ -50,7 +90,7 @@ function hasValidPath(cols, rows, landTiles, mines, startPos, endPos) {
  * to verify a path from start to end exists. If not, retries with
  * a different seed offset until a solvable layout is found.
  */
-export function placeMines(level) {
+export function placeMines(level, droneKillZones = new Set()) {
   const { id, cols, rows, mineCount, startPos, endPos, landTiles } = level;
 
   const isInSafeZone = (col, row) => {
@@ -82,7 +122,8 @@ export function placeMines(level) {
         !mines.has(key) &&
         !isInSafeZone(col, row) &&
         !isEndTile(col, row) &&
-        !isLand(col, row)
+        !isLand(col, row) &&
+        !droneKillZones.has(key)
       ) {
         mines.add(key);
       }
@@ -100,14 +141,15 @@ export function placeMines(level) {
         !mines.has(key) &&
         !isInSafeZone(col, row) &&
         !isEndTile(col, row) &&
-        !isLand(col, row)
+        !isLand(col, row) &&
+        !droneKillZones.has(key)
       ) {
         mines.add(key);
       }
       attempts++;
     }
 
-    if (hasValidPath(cols, rows, landTiles, mines, startPos, endPos)) {
+    if (hasValidPath(cols, rows, landTiles, mines, startPos, endPos, droneKillZones)) {
       return mines;
     }
   }

@@ -4,7 +4,7 @@ export default function SonarPing({ col, row, tileSize }) {
 
   return (
     <>
-      {/* Ring 1 */}
+      {/* Ring 1 — accent yellow fading to transparent */}
       <div
         className="sonar-ping pointer-events-none absolute"
         style={{
@@ -13,12 +13,12 @@ export default function SonarPing({ col, row, tileSize }) {
           width: 40,
           height: 40,
           borderRadius: '50%',
-          border: '2px solid var(--color-ui-accent)',
+          border: '2.5px solid var(--color-ui-accent)',
           opacity: 0,
           zIndex: 5,
         }}
       />
-      {/* Ring 2 (delayed) */}
+      {/* Ring 2 — delayed, slightly different starting color */}
       <div
         className="sonar-ping-delayed pointer-events-none absolute"
         style={{
