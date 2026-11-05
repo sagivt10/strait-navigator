@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {Soundscape} from './dist/audio.js';
+const param=()=>({value:0,setTargetAtTime(){},cancelScheduledValues(){},setValueAtTime(){},linearRampToValueAtTime(){},exponentialRampToValueAtTime(){}});
+let oscillators=0;
+const node=()=>({gain:param(),frequency:param(),threshold:param(),knee:param(),ratio:param(),connect(){},disconnect(){},start(){},stop(){}});
+globalThis.AudioContext=class {constructor(){this.sampleRate=8000;this.currentTime=0;this.state='suspended';this.destination={};} createGain(){return node()} createOscillator(){oscillators++;return node()} createDynamicsCompressor(){return node()} createBiquadFilter(){return node()} createBufferSource(){return node()} createBuffer(c,n){return {getChannelData:()=>new Float32Array(n)}} async resume(){this.state='running'} async suspend(){this.state='suspended'} async close(){this.state='closed'}};
+const a=new Soundscape();assert.equal(await a.unlock(),true);assert.equal(oscillators,4);
+for(let i=0;i<10000;i++)a.update(.016,{playing:true,speed:.8,nearestDroneDistance:10});
+assert.equal(oscillators,4);a.victory();assert.equal(a.music.size,8);for(let i=0;i<100;i++)a.impact();assert.equal(a.voices.size,8);
+a.setMuted(true);assert.equal(a.voices.size,0);assert.equal(a.playClip({duration:2.9}),false);assert.equal(a.music.size,0);a.setMuted(false);let clipEnded=false;assert.equal(a.playClip({duration:2.9},()=>clipEnded=true),true);assert.equal(a.voices.size,1);assert(a.duckUntil>=3);[...a.voices][0].o.onended();assert.equal(clipEnded,true);assert.equal(a.voices.size,0);a.reset();assert.equal(a.voices.size,0);a.victory();a.pause();assert.equal(a.music.size,0);assert.equal(a.ctx.state,'suspended');a.dispose();assert.equal(a.ctx.state,'closed');console.log('PASS: 10,000 allocation-free frames; voice cap 8; mute/pause cancel music; dispose closes context');

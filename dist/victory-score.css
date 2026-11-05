@@ -1,0 +1,272 @@
+/* Speech-only split view. Removing celebrating-score restores the full debrief. */
+#victory-status,
+#victory-review-note {
+  display: none;
+}
+
+body.celebrating-score #result {
+  inset: 0 0 0 auto;
+  width: var(--celebration-panel-width, min(420px, 44vw));
+  height: var(--celebration-panel-height, 100dvh);
+  display: block;
+  padding: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  background: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  scrollbar-width: thin;
+  scrollbar-color: #6a9289 #0a2530;
+}
+
+body.celebrating-score #result .result.panel {
+  --victory-row-height: clamp(24px, calc((var(--celebration-panel-height, 100dvh) - 168px) / 7), 42px);
+  width: 100%;
+  max-width: none;
+  min-height: 100%;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-left: 1px solid #c4dec837;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: visible;
+  background: linear-gradient(150deg, #12333e, #08212d);
+}
+
+body.celebrating-score.celebration-portrait #result {
+  inset: auto 0 0;
+  width: 100%;
+  height: var(--celebration-panel-height, min(58dvh, 420px));
+}
+
+body.celebrating-score.celebration-portrait #result .result.panel {
+  border-left: 0;
+  border-top: 1px solid #c4dec837;
+}
+
+/* Leave only the existing sound control over the unobscured dance viewport. */
+body.celebrating-score > header {
+  right: calc(var(--celebration-panel-width, min(420px, 44vw)) + 8px);
+  top: max(8px, env(safe-area-inset-top));
+  z-index: 4;
+}
+
+body.celebrating-score.celebration-portrait > header {
+  right: max(8px, env(safe-area-inset-right));
+}
+
+body.celebrating-score #audio {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+body.celebrating-score :is(#hud, #controls, #reading, #toast, #captain-bubble, #help, #restart, .credits-link) {
+  display: none !important;
+}
+
+body.celebrating-score > .vignette {
+  right: var(--celebration-panel-width, min(420px, 44vw));
+}
+
+body.celebrating-score.celebration-portrait > .vignette {
+  right: 0;
+  bottom: var(--celebration-panel-height, min(58dvh, 420px));
+}
+
+body.celebrating-score #result :is(#result-copy, .result-stats, .result-actions, .score-breakdown, .score-stamp, .score-hero p) {
+  display: none !important;
+}
+
+body.celebrating-score #result .result-header > :not(#victory-status) {
+  display: none;
+}
+
+body.celebrating-score #result .result-header {
+  display: block;
+  padding: 6px 12px 0;
+}
+
+body.celebrating-score #victory-status {
+  display: block;
+  margin: 0;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 14px;
+  letter-spacing: .15px;
+  color: #d8ebbf;
+}
+
+body.celebrating-score #result .score-hero {
+  display: block;
+  padding: 0 12px 4px;
+  background: none;
+}
+
+body.celebrating-score #result .score-hero > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+body.celebrating-score #result .score-hero .section-kicker {
+  max-width: 134px;
+  font-size: 8px;
+  line-height: 11px;
+  letter-spacing: .8px;
+}
+
+body.celebrating-score #result .score-total {
+  flex-shrink: 0;
+  margin: 0;
+  font-size: 30px;
+  line-height: 34px;
+  letter-spacing: -1.1px;
+  white-space: nowrap;
+}
+
+body.celebrating-score #result .score-total > span {
+  display: inline-block;
+  margin: 0 0 0 5px;
+  font-size: 8px;
+  letter-spacing: .5px;
+}
+
+body.celebrating-score #result .debrief-grid {
+  display: block;
+  border: 0;
+}
+
+body.celebrating-score #result .demo-board {
+  padding: 0 12px;
+  border: 0;
+  background: none;
+}
+
+body.celebrating-score #result .section-heading {
+  min-height: 18px;
+  margin-bottom: 4px;
+}
+
+body.celebrating-score #result .section-heading h3 {
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0;
+}
+
+body.celebrating-score #result .demo-badge {
+  padding: 2px 5px;
+  font-size: 7px;
+  line-height: 10px;
+}
+
+/* Keep table headers, the full demo disclosure and live rank in the a11y tree. */
+body.celebrating-score #result :is(.board-disclaimer, .leaderboard-head, .rank-announcement) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  min-height: 0;
+  padding: 0;
+  margin: -1px !important;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+body.celebrating-score #result .leaderboard-body > .leader-row {
+  grid-template-columns: 18px minmax(0, 1fr) 48px;
+  gap: 6px;
+  height: var(--victory-row-height);
+  min-height: 24px;
+  padding: 1px 7px;
+  margin: 0;
+  border-radius: 4px;
+}
+
+body.celebrating-score #result .leaderboard-body > .leader-row > div {
+  position: relative;
+  min-width: 0;
+}
+
+body.celebrating-score #result .leader-row strong {
+  font-size: 11px;
+  line-height: 19px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+body.celebrating-score #result .leader-row.you strong {
+  padding-right: 25px;
+}
+
+body.celebrating-score #result .leader-row em {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  margin: 0;
+  padding: 2px 3px;
+  font-size: 7px;
+  line-height: 10px;
+}
+
+body.celebrating-score #result .leader-row :is(small, .medal-marker) {
+  display: none;
+}
+
+body.celebrating-score #result .medal-icon {
+  margin-right: 4px;
+  font-size: 15px;
+  vertical-align: -1px;
+}
+
+body.celebrating-score #result .board-position {
+  font-size: 10px;
+}
+
+body.celebrating-score #result .board-score {
+  font-size: 12px;
+}
+
+body.celebrating-score #result .rank-entry-controls {
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  margin-top: 3px;
+}
+
+body.celebrating-score #result :is(.rank-skip, .rank-replay) {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 8px 10px;
+  font-size: 10px;
+}
+
+body.celebrating-score #result .board-footnote {
+  margin-top: 1px;
+  gap: 5px;
+  font-size: 8px;
+  line-height: 11px;
+  color: #9eb9bc;
+}
+
+body.celebrating-score #result #victory-review-note {
+  display: block;
+  margin: 0;
+  padding: 3px 12px max(5px, env(safe-area-inset-bottom));
+  font-size: 9px;
+  line-height: 12px;
+  color: #a8c0be;
+}
+/* Keep the complete compact table and footer visible on short portrait screens. */
+body.celebrating-score.celebration-portrait #victory-status{font-size:9px;line-height:12px}
+body.celebrating-score.celebration-portrait #result .score-total{font-size:28px;line-height:30px}
+body.celebrating-score.celebration-portrait #result #victory-review-note{padding-top:1px;padding-bottom:max(3px,env(safe-area-inset-bottom))}
