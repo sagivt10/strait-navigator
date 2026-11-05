@@ -1,0 +1,35 @@
+import assert from 'node:assert/strict';
+import * as THREE from './dist/vendor/three.module.js';
+import {HazardEffects} from './dist/effects.js';
+const scene=new THREE.Scene();const fx=new HazardEffects(scene);
+assert.equal(scene.children.length,1);
+assert.equal(fx.particles.length,384);
+assert.equal(fx.rings.length,8);
+assert.equal(fx.sources.length,24);
+const geometry=fx.geometry, material=fx.material, root=fx.root;
+for(let i=0;i<50;i++)fx.trail(i,{x:i,y:20,z:-20},.05);
+assert.equal(fx.sources.length,24);
+fx.impact({x:0,z:-20});fx.shipHit({x:0,z:0,heading:1});
+fx.update(.016,1,{shipX:0,shipZ:0,shipHeading:1,health:2});
+assert.ok(fx.attributes.alpha.array.some(x=>x>0));
+assert.ok(fx.rings.some(r=>r.mesh.visible));
+assert.ok(fx.particles.some(p=>p.kind===1&&p.life>0&&p.vy>0));
+for(let i=0;i<300;i++){
+ if(i%3===0)fx.impact({x:i,z:-20,hitShip:i%2===0});
+ fx.trail(i,{x:i,y:20,z:-20},.05);
+ fx.update(.05,i*.05,{shipX:i,shipZ:0,health:1});
+}
+assert.equal(fx.geometry,geometry);assert.equal(fx.material,material);
+assert.equal(fx.root,root);assert.equal(fx.root.children.length,9);
+for(const attribute of Object.values(fx.attributes))assert.ok(attribute.array.every(Number.isFinite));
+fx.reset();assert.ok(fx.attributes.alpha.array.every(x=>x===0));assert.ok(fx.rings.every(r=>!r.mesh.visible));assert.equal(fx.hitHeat,0);
+for(let i=0;i<100;i++)fx.update(.05,i*.05,{health:2});
+assert.ok(fx.attributes.alpha.array.every(x=>x===0));
+fx.impact({x:0,z:-10});
+for(let i=0;i<120;i++)fx.update(.05,i*.05,{health:2});
+assert.ok(fx.attributes.alpha.array.every(x=>x===0));assert.ok(fx.rings.every(r=>!r.mesh.visible));
+let disposed=0;geometry.addEventListener('dispose',()=>disposed++);material.addEventListener('dispose',()=>disposed++);
+fx.dispose();fx.dispose();assert.equal(disposed,2);assert.equal(scene.children.length,0);
+fx.impact({x:0,z:0});fx.trail(0,{x:0,y:0,z:0});fx.shipHit({x:0,z:0});fx.update(.1,10);fx.reset();
+assert.equal(scene.children.length,0);
+console.log('PASS: 384 particle / 8 ring / 24 trail caps; emission; damage; finite buffers; stable allocations; expiry; reset; idempotent disposal. CPU-only Three.js API test, no renderer/GPU visual QA.');

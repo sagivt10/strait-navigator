@@ -1,0 +1,14 @@
+{
+  "mapping_version": 1,
+  "source": { "project": "REPLACE_WITH_PROJECT_REF", "schema": "public", "table": "REPLACE_WITH_ACTUAL_TABLE" },
+  "primary_key": [{ "column": "REPLACE_WITH_ACTUAL_PK_COLUMN", "type": "string" }],
+  "fields": {
+    "name": "REPLACE_WITH_ACTUAL_NAME_COLUMN",
+    "score": "REPLACE_WITH_ACTUAL_SCORE_COLUMN",
+    "time": null,
+    "health": null,
+    "status": null,
+    "version": null,
+    "submitted_at": null
+  }
+}

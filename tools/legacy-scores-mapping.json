@@ -1,0 +1,29 @@
+{
+  "mapping_version": 1,
+  "source": {
+    "project": "youctcgcshdznhqumakz",
+    "schema": "public",
+    "table": "scores"
+  },
+  "primary_key": [
+    {
+      "column": "id",
+      "type": "string"
+    }
+  ],
+  "fields": {
+    "name": "player_name",
+    "score": "score",
+    "time": {
+      "column": "time_ms",
+      "transform": "ms_to_seconds"
+    },
+    "health": null,
+    "status": null,
+    "version": null,
+    "submitted_at": {
+      "column": "created_at",
+      "transform": "postgres_timestamp_to_rfc3339"
+    }
+  }
+}

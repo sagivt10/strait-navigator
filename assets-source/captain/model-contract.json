@@ -1,0 +1,59 @@
+{
+  "asset": "captain-trump-v4.glb",
+  "authorship": "Original geometry and materials generated for Strait Escape; no third-party meshes or textures.",
+  "height": 4.291991081088781,
+  "coordinate_system": "glTF Y-up; face/front is -Z; feet at Y=0",
+  "nodes": [
+    "Captain_Root",
+    "hips",
+    "chest",
+    "head",
+    "thigh.L",
+    "shin.L",
+    "foot.L",
+    "thigh.R",
+    "shin.R",
+    "foot.R",
+    "upper_arm.L",
+    "forearm.L",
+    "hand.L",
+    "upper_arm.R",
+    "forearm.R",
+    "hand.R"
+  ],
+  "meshes": 37,
+  "triangles": 51638,
+  "bounds": {
+    "min": [
+      -1.1247627884149551,
+      0.016009006649255753,
+      -0.7421125173568726
+    ],
+    "max": [
+      1.1247629225254059,
+      4.308000087738037,
+      0.5280003547668457
+    ]
+  },
+  "bytes": 1113516,
+  "three_node_names": [
+    "Captain_Root",
+    "hips",
+    "chest",
+    "head",
+    "upper_armL",
+    "forearmL",
+    "handL",
+    "upper_armR",
+    "forearmR",
+    "handR",
+    "thighL",
+    "shinL",
+    "footL",
+    "thighR",
+    "shinR",
+    "footR"
+  ],
+  "rig": "Rigid articulated object hierarchy, not skin/bone armature",
+  "front_arm_rotation": "Positive shoulder local X raises hands toward face/front (negative Z)."
+}
