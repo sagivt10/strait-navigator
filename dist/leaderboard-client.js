@@ -1,5 +1,6 @@
 import {REPLAY_VERSION} from './replay.js';
 import {ReplayOutbox} from './replay-outbox.js';
+import {rememberVoyage} from './voyage-history.js';
 
 export class LeaderboardClient {
   constructor({fetcher = globalThis.fetch?.bind(globalThis), outbox = new ReplayOutbox(), now = Date.now,
@@ -60,6 +61,7 @@ export class LeaderboardClient {
       try {
         const result = await this.request(`/runs/${encodeURIComponent(item.challenge.id)}/submit`, {method:'POST', body:JSON.stringify(item.body)});
         if (!result?.entry?.id || !result.board?.entries) throw new Error('Incomplete ranking response.');
+        rememberVoyage(result);
         this.pending.delete(item.challenge.id); await this.outbox.delete(item.challenge.id).catch(()=>{}); return result;
       } catch (error) {
         const terminal = error.status >= 400 && error.status < 500 && error.status !== 429;
