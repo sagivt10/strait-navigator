@@ -1,5 +1,6 @@
 import {LeaderboardClient} from './leaderboard-client.js';
 import {leaderboardMarkup} from './live-score-view.js';
+import {loadLastVoyage} from './voyage-history.js';
 const client = new LeaderboardClient();
 const $ = id => document.getElementById(id);
 async function refresh() {
@@ -10,12 +11,14 @@ async function refresh() {
     $('recovery').textContent = [saved ? `${saved} previously unsaved voyage(s) recovered.` : '',
       ...failed.map(row => `A previous voyage was not saved: ${row.reason.message}`)].filter(Boolean).join('\n');
   });
+  await recover;
   try {
     const board = await client.board();
-    $('board').innerHTML = leaderboardMarkup({...board, limit:100});
+    const last = loadLastVoyage();
+    const current = board.entries.find(entry => entry.id === last?.entry.id);
+    $('board').innerHTML = leaderboardMarkup({...board, current, limit:100});
     $('status').textContent = `${board.total} ranked voyages · Updated ${new Date().toLocaleTimeString()}`;
   } catch { $('status').textContent = 'Leaderboard unavailable. Please retry shortly. No sample scores are shown.'; }
-  await recover;
   $('refresh').disabled = false;
 }
 $('refresh').onclick = refresh;

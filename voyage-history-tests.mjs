@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict';
+import {LAST_VOYAGE_KEY, loadLastVoyage, rememberVoyage} from './dist/voyage-history.js';
+const values = new Map();
+const storage = {getItem:key => values.get(key), setItem:(key,value) => values.set(key,value)};
+const saved = (id, date, score=250) => ({entry:{id,name:'Captain',score,status:'lost',rank:2,
+  time:32,health:0,version:'v20-1',submittedAt:date},board:{total:13},token:'must-not-store',replay:{events:[]}});
+assert.equal(loadLastVoyage(storage), null);
+rememberVoyage(saved('first','2026-11-06T10:00:00Z'),storage);
+assert.equal(loadLastVoyage(storage).entry.id,'first');
+assert(!values.get(LAST_VOYAGE_KEY).includes('must-not-store'));
+assert(!values.get(LAST_VOYAGE_KEY).includes('replay'));
+rememberVoyage(saved('second','2026-11-06T11:00:00Z',500),storage);
+rememberVoyage(saved('first','2026-11-06T10:00:00Z'),storage);
+assert.equal(loadLastVoyage(storage).entry.id,'second','an older recovered run cannot replace the newest saved result');
+assert.equal(rememberVoyage({entry:{id:'bad',rank:0}},storage),null);
+assert.equal(loadLastVoyage(storage).entry.id,'second');
+const blocked={getItem(){throw Error('blocked');},setItem(){throw Error('quota');}};
+assert.equal(loadLastVoyage(blocked),null);
+assert.equal(rememberVoyage(saved('third','2026-11-06T12:00:00Z'),blocked).entry.id,'third','storage failures never block successful submission');
+values.set(LAST_VOYAGE_KEY,'{bad json');assert.equal(loadLastVoyage(storage),null);
+console.log('PASS: saved-rank receipt, old-retry isolation, no credentials or replays, invalid data and blocked storage.');
