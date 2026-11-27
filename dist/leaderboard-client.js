@@ -1,6 +1,6 @@
-import {REPLAY_VERSION} from './replay.js?v=21';
+import {REPLAY_VERSION} from './replay.js?v=22';
 import {ReplayOutbox} from './replay-outbox.js';
-import {rememberVoyage} from './voyage-history.js?v=21';
+import {rememberVoyage} from './voyage-history.js?v=22';
 
 export class LeaderboardClient {
   constructor({fetcher = globalThis.fetch?.bind(globalThis), outbox = new ReplayOutbox(), now = Date.now,
@@ -42,7 +42,7 @@ export class LeaderboardClient {
       return challenge;
     } catch { return null; }
   }
-  async board({archive=false}={}) { return this.request('/leaderboard'+(archive?'?season=v20':'')); }
+  async board({archive=false,season=null}={}) { const v=season==='v21'?'v21':(archive||season==='v20')?'v20':null;return this.request('/leaderboard'+(v?'?season='+v:'')); }
   queue(challenge, name, replay) {
     const item = {challenge, body:{token:challenge.token, name, replay}, persisted:false};
     this.pending.set(challenge.id, item);

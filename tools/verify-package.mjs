@@ -11,7 +11,7 @@ async function check(dir){for(const entry of await readdir(dir,{withFileTypes:tr
 await check('.');
 for(const file of ['dist/index.html','dist/leaderboard.html','dist/privacy.html','netlify/functions/leaderboard.mjs','supabase/migrations/202611050001_leaderboard.sql','.env.example'])await readFile(file);
 assert(!(await readFile('dist/game.js','utf8')).includes('SUPABASE_SECRET_KEY'));
-for(const args of [['--test','season2-tests.mjs','server/api.test.js'],['integration-tests.mjs']]){
+for(const args of [['--test','season2-tests.mjs','feedback-tests.mjs','server/api.test.js'],['integration-tests.mjs']]){
  const result=spawnSync(process.execPath,args,{encoding:'utf8'});
  assert.equal(result.status,0,`Release smoke checks failed:
 ${result.stdout}

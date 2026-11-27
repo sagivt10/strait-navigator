@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {
-  SHIELD_DURATION,SHIELD_CHARGES,MAX_HEALTH,MAX_INTERCEPTS,MAX_SUPPORT_EARNED,
+  MISSILE_LIFT,SHIELD_DURATION,SHIELD_CHARGES,MAX_HEALTH,MAX_INTERCEPTS,MAX_SUPPORT_EARNED,
   SUPPORT_DELAY,SUPPORT_DROP_LIFETIME,SUPPORT_PICKUP_RADIUS,COURSE_LENGTH,DOCK,
   DRONES,createRun,damage,droneAt,stepRun,selectInterceptTarget,fireIntercept,
 } from './dist/logic.js';
@@ -65,7 +65,7 @@ check('two simultaneous threats consume two charges and each keeps its own visua
   const run=active(),a=missile(run,{x:run.x-13.5,z:run.z-4}),b=missile(run,{x:run.x+13.5,z:run.z+4});stepRun(run,{},1/60);
   assert.equal(run.shieldCharges,0);assert.equal(run.shieldUntil,0);assert.equal(run.missilesIntercepted,2);assert.equal(run.missilesDodged,0);assert.equal(run.health,2);
   assert(a.intercepted&&b.intercepted);assert.notEqual(a.shieldIntercept,b.shieldIntercept);assert.equal(a.shieldIntercept.id,a.id);assert.equal(b.shieldIntercept.id,b.id);assert.equal(run.lastShieldIntercept.id,b.id);
-  for(const m of[a,b]){const p=(m.interceptedAt-m.start-.7)/(m.impactAt-m.start-.7);assert.equal(m.shieldIntercept.target.x,m.fromX+(m.x-m.fromX)*p);assert.equal(m.shieldIntercept.target.y,5*(1-p)+Math.sin(p*Math.PI)*12);assert.equal(m.shieldIntercept.target.z,m.fromZ+(m.z-m.fromZ)*p);}
+  for(const m of[a,b]){const p=(m.interceptedAt-m.start-MISSILE_LIFT)/(m.impactAt-m.start-MISSILE_LIFT);assert.equal(m.shieldIntercept.target.x,m.fromX+(m.x-m.fromX)*p);assert.equal(m.shieldIntercept.target.y,5*(1-p)+Math.sin(p*Math.PI)*12);assert.equal(m.shieldIntercept.target.z,m.fromZ+(m.z-m.fromZ)*p);}
   const at=a.interceptedAt;advance(run,1.2);assert(run.time>=at+1.19);assert(run.missiles.includes(a)&&run.missiles.includes(b),'both event snapshots remain available throughout their effect');
   advance(run,2);assert.equal(run.missilesDodged,0);assert.equal(run.missilesIntercepted,2);assert.equal(run.health,2);
 });

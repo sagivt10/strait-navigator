@@ -1,5 +1,7 @@
 export const COURSE_LENGTH=1800, CHANNEL_HALF_WIDTH=54, MAX_SPEED=15.2;
 export const INTERCEPT_RANGE=220;
+export const HAZARD_PACE=MAX_SPEED/14;
+export const MISSILE_WARNING=3.2/HAZARD_PACE,MISSILE_LIFT=.7/HAZARD_PACE;
 export const HULL_WIDTH_SCALE=1.09,HULL_LENGTH_SCALE=1.14;
 export const HULL_MARGIN=1.15; // Gameplay footprint, not tied to the mesh bounds.
 export const MAX_NEAR_MISS_ZONES=8, MAX_CLEAN_PASSES=11;
@@ -56,6 +58,7 @@ export function createRun({supportSeed}={}){
   shieldUntil:0,shieldCharges:0,missilesIntercepted:0,lastShieldIntercept:null,
 };}
 export function droneAt(drone,time){
+  time*=HAZARD_PACE;
   const a=time*Math.PI*2/drone.period+drone.phase;
   if(drone.pair){
     const ch=channelAt(drone.pairCenterZ),x=ch.center+Math.sin(a)*(ch.halfWidth-34)+drone.pairOffset,z=drone.z+Math.cos(a*.5)*3;
@@ -149,7 +152,7 @@ function launchMissiles(run){
       // fixed at launch, launched from the other coast and never homes in.
       const inward=targetX>targetChannel.center?-1:1;
       const x=shot?Math.max(targetChannel.center-targetChannel.halfWidth+12,Math.min(targetChannel.center+targetChannel.halfWidth-12,targetX+inward*27)):targetX;
-      run.missiles.push({id:++run.missileId,zoneIndex:i,start:run.time,impactAt:run.time+3.2,x,z:targetZ-shot*8,fromX:coast.center+zone.side*(shot?-1:1)*(coast.halfWidth+17),fromZ:zone.z,radius:10,resolved:false});
+      run.missiles.push({id:++run.missileId,zoneIndex:i,start:run.time,impactAt:run.time+MISSILE_WARNING,x,z:targetZ-shot*8,fromX:coast.center+zone.side*(shot?-1:1)*(coast.halfWidth+17),fromZ:zone.z,radius:10,resolved:false});
     }
     run.missileCooldowns[i]=i>=6?1e9:run.time+(zone.paired?11.5:9.5);
     run.lastVolleyAt=run.time;break;
@@ -161,7 +164,7 @@ function interceptThreateningMissiles(run,dt){
   for(const m of run.missiles){
     if(!shieldActive(run))break;
     if(m.resolved||run.time<m.impactAt-.8||m.impactAt<run.time-dt||Math.hypot(run.x-m.x,run.z-m.z)>m.radius+8)continue;
-    const p=Math.max(0,Math.min(1,(run.time-m.start-.7)/Math.max(.1,m.impactAt-m.start-.7)));
+    const p=Math.max(0,Math.min(1,(run.time-m.start-MISSILE_LIFT)/Math.max(.1,m.impactAt-m.start-MISSILE_LIFT)));
     const event={id:m.id,at:run.time,from:{x:run.x,y:2.4,z:run.z},target:{x:m.fromX+(m.x-m.fromX)*p,y:5*(1-p)+Math.sin(p*Math.PI)*12,z:m.fromZ+(m.z-m.fromZ)*p}};
     m.intercepted=true;m.resolved=true;m.interceptedAt=run.time;m.shieldIntercept=event;
     run.shieldCharges--;run.missilesIntercepted++;run.lastShieldIntercept=event;
