@@ -1,8 +1,11 @@
-export const COURSE_LENGTH=1800, CHANNEL_HALF_WIDTH=54, MAX_SPEED=14;
+export const COURSE_LENGTH=1800, CHANNEL_HALF_WIDTH=54, MAX_SPEED=15.2;
 export const INTERCEPT_RANGE=220;
+export const HULL_WIDTH_SCALE=1.09,HULL_LENGTH_SCALE=1.14;
+export const HULL_MARGIN=1.15; // Gameplay footprint, not tied to the mesh bounds.
+export const MAX_NEAR_MISS_ZONES=8, MAX_CLEAN_PASSES=11;
 export const SUPPORT_DELAY=3, BOOST_DURATION=8, SUPPORT_DOCK_CUTOFF=180;
 export const SHIELD_DURATION=15, SHIELD_CHARGES=2;
-export const MAX_SUPPORT_EARNED=2, MAX_INTERCEPTS=2, MAX_HEALTH=2, SUPPORT_PASSES_REQUIRED=2;
+export const MAX_SUPPORT_EARNED=3, MAX_INTERCEPTS=2, MAX_HEALTH=2, SUPPORT_PASSES_REQUIRED=2;
 export const SUPPORT_DROP_LIFETIME=45, SUPPORT_PICKUP_RADIUS=8, SUPPORT_DROP_DISTANCE=70;
 export const ROUTE_POINTS=[[0,0,64],[.18,-24,60],[.39,35,48],[.58,93,44],[.76,121,51],[1,58,64]];
 export function channelAt(z){const p=Math.max(0,Math.min(1,-z/COURSE_LENGTH));let i=0;while(i<ROUTE_POINTS.length-2&&p>ROUTE_POINTS[i+1][0])i++;const[a,x,w]=ROUTE_POINTS[i],[b,xx,ww]=ROUTE_POINTS[i+1],t=(p-a)/(b-a),s=t*t*(3-2*t);return{center:x+(xx-x)*s,halfWidth:w+(ww-w)*s};}
@@ -19,6 +22,8 @@ export const DRONES=[
   {z:-1640,phase:5,period:22,height:28,radius:34,pair:true,pairCenterZ:-1622.5,pairOffset:18},
   {z:-795,phase:1.5,period:18,height:27,radius:20,pair:true,pairCenterZ:-777.5,pairOffset:15},
   {z:-1055,phase:4.4,period:23,height:27,radius:21,pair:true,pairCenterZ:-1037.5,pairOffset:15},
+  {z:-165,phase:2.6,period:22,height:25,radius:10},
+  {z:-1112,phase:4.1,period:24,height:28,radius:11},
 ];
 // Single warnings teach one fixed target. Later gaps fire opposite-bank pairs.
 // Their compact, separated circles leave traversable water, not a channel wall.
@@ -30,6 +35,8 @@ export const MISSILE_ZONES=[
   {z:-1490,side:-1,paired:true,triggerRange:45},
   {z:-350,side:1,triggerRange:22},
   {z:-1705,side:1,paired:true,triggerRange:22},
+  {z:-533,side:1,triggerRange:22},
+  {z:-1125,side:-1,triggerRange:21},
 ];
 function freshSupportSeed(){
   if(globalThis.crypto?.getRandomValues)return globalThis.crypto.getRandomValues(new Uint32Array(1))[0];
@@ -40,7 +47,7 @@ export function createRun({supportSeed}={}){
   return{
   x:0,z:8,heading:0,speed:0,exposure:0,time:0,distance:0,state:'playing',nearBank:false,detected:false,
   health:MAX_HEALTH,hits:0,invulnerable:0,missiles:[],missileCooldowns:MISSILE_ZONES.map(()=>0),missileId:0,
-  missilesDodged:0,lastHit:'',lastHitTime:-100,activeDrone:-1,lockStage:'clear',dockProgress:0,dockStart:null,
+  missilesDodged:0,cleanMissileZones:[],lastVolleyAt:-10000,lastHit:'',lastHitTime:-100,activeDrone:-1,lockStage:'clear',dockProgress:0,dockStart:null,
   droneDodges:0,dodgedDrones:[],failedDrones:[],droneEncounter:null,interceptsLeft:1,intercepted:[],lastIntercept:null,
   supportCharges:0,supportEarned:0,supportProgress:0,supportPassedDrones:[],supportPending:null,supportDrop:null,
   supportSeed:seed,supportRandomState:seed,supportDispatched:0,lastSupportDispatch:null,
@@ -101,7 +108,7 @@ function dispatchSupport(run){
   if(!eligible.length)return;
   const kind=eligible[Math.floor(nextSupportRandom(run)*eligible.length)];
   const z=run.z-SUPPORT_DROP_DISTANCE,ch=channelAt(z),id=run.supportDispatched+1,side=id%2?1:-1;
-  const x=Math.max(ch.center-ch.halfWidth+12,Math.min(ch.center+ch.halfWidth-12,run.x+side*22));
+  const x=Math.max(ch.center-ch.halfWidth+12,Math.min(ch.center+ch.halfWidth-12,run.x+side*16));
   run.supportCharges--;run.supportDispatched++;
   run.lastSupportDispatch={id,kind,at:run.time,x,z};
   run.supportPending={...run.lastSupportDispatch,deliverAt:run.time+SUPPORT_DELAY};
@@ -130,6 +137,7 @@ function collectSupportDrop(run){
   run.supportCollected++;run.lastSupportPickup={id:d.id,kind:d.kind,at:run.time,x:d.x,z:d.z};run.supportDrop=null;
 }
 function launchMissiles(run){
+  if(run.time-run.lastVolleyAt<5)return;
   for(let i=0;i<MISSILE_ZONES.length;i++){
     const zone=MISSILE_ZONES[i];
     if(Math.abs(run.z-zone.z)>=zone.triggerRange||run.time<run.missileCooldowns[i])continue;
@@ -141,9 +149,10 @@ function launchMissiles(run){
       // fixed at launch, launched from the other coast and never homes in.
       const inward=targetX>targetChannel.center?-1:1;
       const x=shot?Math.max(targetChannel.center-targetChannel.halfWidth+12,Math.min(targetChannel.center+targetChannel.halfWidth-12,targetX+inward*27)):targetX;
-      run.missiles.push({id:++run.missileId,start:run.time,impactAt:run.time+3.2,x,z:targetZ-shot*8,fromX:coast.center+zone.side*(shot?-1:1)*(coast.halfWidth+17),fromZ:zone.z,radius:10,resolved:false});
+      run.missiles.push({id:++run.missileId,zoneIndex:i,start:run.time,impactAt:run.time+3.2,x,z:targetZ-shot*8,fromX:coast.center+zone.side*(shot?-1:1)*(coast.halfWidth+17),fromZ:zone.z,radius:10,resolved:false});
     }
-    run.missileCooldowns[i]=run.time+(zone.paired?11.5:9.5);
+    run.missileCooldowns[i]=i>=6?1e9:run.time+(zone.paired?11.5:9.5);
+    run.lastVolleyAt=run.time;break;
   }
 }
 // Fictional automatic defense reacts only to a nearby, imminent fixed-target
@@ -183,14 +192,14 @@ export function stepRun(run,input,dt){
   // An eight-second boost raises the speed target, never teleports the hull.
   // Normal steering/reverse/braking retain their original behavior.
   const boosted=run.boostUntil>run.time;
-  const target=throttle>0?MAX_SPEED*(boosted?2:1)*throttle:throttle<0?4*throttle:0;
+  const target=throttle>0?(boosted?28:MAX_SPEED)*throttle:throttle<0?4*throttle:0;
   const acceleration=throttle<0&&run.speed>0?7:throttle?3.8:1.7;
   run.speed+=Math.max(-acceleration*dt,Math.min(acceleration*dt,target-run.speed));
   run.heading-=steer*.65*Math.min(1,.25+Math.abs(run.speed)/6)*dt*Math.sign(run.speed||1);
   run.x-=Math.sin(run.heading)*run.speed*dt;run.z-=Math.cos(run.heading)*run.speed*dt;
   run.z=Math.max(-COURSE_LENGTH-36,Math.min(24,run.z));
-  const ch=channelAt(run.z),offset=run.x-ch.center;run.nearBank=Math.abs(offset)>ch.halfWidth-3;
-  if(Math.abs(offset)>ch.halfWidth){run.x=ch.center+Math.sign(offset)*ch.halfWidth;run.speed*=.96;}
+  const ch=channelAt(run.z),offset=run.x-ch.center,edge=ch.halfWidth-.65-Math.abs(Math.sin(run.heading))*.5;run.nearBank=Math.abs(offset)>edge-3;
+  if(Math.abs(offset)>edge){run.x=ch.center+Math.sign(offset)*edge;run.speed*=.96;}
   run.activeDrone=detectDrone(run);run.detected=run.activeDrone>=0;
   run.exposure=Math.max(0,Math.min(1,run.exposure+(run.detected?1.05:-.35)*dt));
   run.lockStage=run.detected?(run.exposure>.6?'locked':'acquiring'):'clear';
@@ -199,7 +208,15 @@ export function stepRun(run,input,dt){
   trackDroneEscape(run,dt);trackSupportProgress(run);launchMissiles(run);
   interceptThreateningMissiles(run,dt);
   for(const m of run.missiles)if(!m.resolved&&run.time>=m.impactAt){
-    m.resolved=true;if(Math.hypot(run.x-m.x,run.z-m.z)<m.radius+2)damage(run,'missile');else run.missilesDodged++;
+    m.resolved=true;
+    const clearance=Math.hypot(run.x-m.x,run.z-m.z)-m.radius;
+    if(clearance<2+HULL_MARGIN)damage(run,'missile');
+    else{
+      run.missilesDodged++;
+      if(clearance<=16&&run.speed>1.25&&Number.isInteger(m.zoneIndex)&&!run.cleanMissileZones.includes(m.zoneIndex)){
+        run.cleanMissileZones.push(m.zoneIndex);
+      }
+    }
   }
   run.missiles=run.missiles.filter(m=>run.time<m.impactAt+1.7);
   run.distance=Math.max(run.distance,Math.min(COURSE_LENGTH,-run.z));

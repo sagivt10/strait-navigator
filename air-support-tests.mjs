@@ -21,7 +21,7 @@ check('complete independent support state and no public choice/call API',()=>{
   for(const key of['supportPending','supportDrop','lastSupportDispatch','lastSupportDelivery','lastSupportPickup','lastSupportIgnored'])assert.equal(run[key],null);
   assert.equal(run.supportSeed,0);assert.equal(run.supportRandomState,0);assert.deepEqual(run,other);
   run.supportPassedDrones.push(4);assert.deepEqual(other.supportPassedDrones,[]);
-  assert.equal(MAX_SUPPORT_EARNED,2);assert.equal(SUPPORT_PASSES_REQUIRED,2);assert.equal(MAX_INTERCEPTS,2);
+  assert.equal(MAX_SUPPORT_EARNED,3);assert.equal(SUPPORT_PASSES_REQUIRED,2);assert.equal(MAX_INTERCEPTS,2);
 });
 check('fresh runs use new seeds while explicit seeds are deterministic unsigned values',()=>{
   const seeds=Array.from({length:32},()=>createRun().supportSeed);assert(new Set(seeds).size>1);
@@ -42,7 +42,7 @@ check('revisiting, reverse motion and loiter cannot farm a passed drone',()=>{
   assert.equal(run.supportProgress,1);assert.equal(run.supportDispatched,0);assert.deepEqual(run.supportPassedDrones,[0]);
 });
 check('escaping a cone without passage cannot earn support',()=>{
-  const run=createRun();
+  const run=createRun();run.intercepted.push(9,10);
   for(let n=0;n<27;n++){const p=droneAt(DRONES[0],run.time+1/60);run.x=p.scanX;run.z=p.scanZ;stepRun(run,{},1/60);}
   run.z=8;run.x=0;advance(run,1.4);assert.equal(run.droneDodges,1);assert.equal(run.supportProgress,0);
 });
@@ -51,11 +51,11 @@ check('intercepted drones and damaged passes cannot earn support',()=>{
   assert.equal(run.supportProgress,0);assert.equal(run.droneDodges,0);
   run.activeDrone=1;damage(run,'drone');cleanPass(run,1);assert.equal(run.supportProgress,0);
 });
-check('earned cap is two per voyage; a second earning queues behind the first drop',()=>{
+check('earned cap is three per voyage; subsequent earnings queue behind the first drop',()=>{
   const run=earned();for(const id of[2,7,3,8,4])cleanPass(run,id);
-  assert.equal(run.supportEarned,2);assert.equal(run.supportCharges,1);assert.equal(run.supportProgress,0);assert.equal(run.supportDispatched,1);
+  assert.equal(run.supportEarned,3);assert.equal(run.supportCharges,2);assert.equal(run.supportProgress,0);assert.equal(run.supportDispatched,1);
   const banked=deferred();for(const id of[2,7,3,8,4])cleanPass(banked,id);
-  assert.equal(banked.supportEarned,2);assert.equal(banked.supportCharges,2);assert.equal(banked.supportDispatched,0);
+  assert.equal(banked.supportEarned,3);assert.equal(banked.supportCharges,3);assert.equal(banked.supportDispatched,0);
 });
 check('dispatch target is fixed, 70m ahead, off-axis and safely inside the future channel',()=>{
   const run=earned(),p=run.supportPending,ch=channelAt(p.z);
@@ -86,10 +86,10 @@ check('boost activates on pickup, not dispatch or landing',()=>{
   const {run}=dropReady('boost');assert.equal(run.boostUntil,0);collect(run);
   assert.equal(run.boostUntil-run.lastSupportPickup.at,BOOST_DURATION);assert.equal(run.supportCollected,1);
 });
-check('boost accelerates smoothly to double speed and preserves braking and steering',()=>{
+check('boost accelerates smoothly to its 28 knot cap and preserves braking and steering',()=>{
   const {run}=dropReady('boost');collect(run);run.x=0;run.z=8;run.speed=MAX_SPEED;
   stepRun(run,{throttle:1},1/60);assert(run.speed>MAX_SPEED&&run.speed<MAX_SPEED+.1);
-  advance(run,4,{throttle:1});assert.equal(run.speed,MAX_SPEED*2);
+  advance(run,4,{throttle:1});assert.equal(run.speed,28);
   const speed=run.speed;advance(run,1,{throttle:-1,steer:1});assert(run.speed<speed-6.9);assert.notEqual(run.heading,0);
 });
 check('boost ends after eight game seconds and speed returns to the ordinary target',()=>{

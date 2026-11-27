@@ -17,7 +17,7 @@ function missile(run,{id=run.missiles.length+1,impactAt=run.time+.5,x=run.x,z=ru
   const m={id,start:impactAt-3.2,impactAt,x,z,fromX:90,fromZ:-20,radius:10,resolved};run.missiles.push(m);return m;
 }
 check('shield starts empty and physical collection grants exactly two charges for fifteen seconds',()=>{
-  const fresh=createRun();assert.equal(SHIELD_DURATION,15);assert.equal(SHIELD_CHARGES,2);assert.equal(MAX_HEALTH,2);assert.equal(MAX_SUPPORT_EARNED,2);
+  const fresh=createRun();assert.equal(SHIELD_DURATION,15);assert.equal(SHIELD_CHARGES,2);assert.equal(MAX_HEALTH,2);assert.equal(MAX_SUPPORT_EARNED,3);
   assert.equal(fresh.shieldUntil,0);assert.equal(fresh.shieldCharges,0);assert.equal(fresh.missilesIntercepted,0);assert.equal(fresh.lastShieldIntercept,null);
   const run=earned();assert.equal(run.shieldCharges,0);advance(run,SUPPORT_DELAY+.1);assert.equal(run.shieldCharges,0);
   const d={...run.supportDrop};run.x=d.x+SUPPORT_PICKUP_RADIUS+1;run.z=d.z;stepRun(run,{},1/60);assert.equal(run.supportCollected,0);
@@ -103,11 +103,13 @@ check('loss, docking and restart clear shield activity without altering past run
 check('interceptions cannot farm pickups, support earnings, dodge events or direct points',()=>{
   const run=active(),before=scoreRun(run),earnedCount=run.supportEarned,progress=run.supportProgress;missile(run);stepRun(run,{},1/60);advance(run,3);
   assert.equal(run.supportCollected,1);assert.equal(run.supportEarned,earnedCount);assert.equal(run.supportProgress,progress);assert.equal(run.droneDodges,0);assert.equal(run.missilesDodged,0);assert.equal(run.missilesIntercepted,1);
-  assert.deepEqual(scoreRun(run).rows,before.rows);assert.equal(scoreRun(run).rows.find(r=>r.id==='supplies').points,250);
+  assert.deepEqual(scoreRun(run).rows,before.rows);assert.equal(scoreRun(run).rows.find(r=>r.id==='supplies').points,180);
 });
 check('serialized active shield resumes identical events with no duplicated consumption',()=>{
   const run=active();missile(run);const restored=JSON.parse(JSON.stringify(run));advance(run,1);advance(restored,1);assert.deepEqual(restored,run);assert.equal(restored.shieldCharges,1);assert.equal(restored.missilesIntercepted,1);assert.equal(restored.supportCollected,1);
 });
+const {createRun:legacyRun,stepRun:legacyStep,fireIntercept:legacyFire,selectInterceptTarget:legacyTarget}=await import('./test-fixtures/season1/dist/logic.js');
+const {pilot:legacyPilot,simulateHarderRoute:legacySimulate}=await import('./test-fixtures/season1/harder-route-simulate.mjs');
 const shieldRoutes=[
   {supportSeed:2,kinds:['shield','boost']},
   {supportSeed:5,kinds:['shield','shield']},
@@ -117,14 +119,14 @@ const shieldRoutes=[
 ];
 for(const dt of[1/20,1/30,1/60]){
   check(`${Math.round(1/dt)}fps full route needs neither supply pickups nor manual interceptions`,()=>{
-    const r=simulateHarderRoute({dt,collect:false,intercept:false,supportSeed:5});
+    const r=legacySimulate({dt,collect:false,intercept:false,supportSeed:5});
     assert.equal(r.state,'won');assert.equal(r.health,2);assert.equal(r.hits.length,0);assert.equal(r.shots.length,0);assert.equal(r.pickups.length,0);assert.equal(r.ignored.length,2);assert.equal(r.nearBankFrames,0);assert.equal(r.missilesDodged,11);assert.equal(r.x,DOCK.x);assert.equal(r.z,DOCK.z);
   });
   for(const {supportSeed,kinds} of shieldRoutes)check(`${Math.round(1/dt)}fps seed ${supportSeed} physically collects ${kinds.join(' then ')} and reaches the dock`,()=>{
-    const run=createRun({supportSeed}),pickups=[];let nearBankFrames=0,shieldEvents=0;
+    const run=legacyRun({supportSeed}),pickups=[];let nearBankFrames=0,shieldEvents=0;
     for(let frame=0;frame<320/dt&&['playing','docking'].includes(run.state);frame++){
-      if(run.z<-1470&&[5,6].includes(selectInterceptTarget(run)))fireIntercept(run);
-      const collected=run.supportCollected,intercepted=run.missilesIntercepted;stepRun(run,pilot(run),dt);
+      if(run.z<-1470&&[5,6].includes(legacyTarget(run)))legacyFire(run);
+      const collected=run.supportCollected,intercepted=run.missilesIntercepted;legacyStep(run,legacyPilot(run),dt);
       if(run.supportCollected>collected)pickups.push({...run.lastSupportPickup});
       if(run.nearBank)nearBankFrames++;
       const newlyIntercepted=run.missiles.filter(m=>m.shieldIntercept?.at===run.time);

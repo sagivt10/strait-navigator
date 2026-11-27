@@ -9,7 +9,7 @@ Only `dist/` is published. Netlify bundles the Fetch-standard function from `net
 - `GET /api/leaderboard` returns `{entries,total,version}`; up to 100 entries. `entry` is `{id,name,score,total,time,health,status,rank,submittedAt,version}`. `score` and `total` are equal. Scores always derive from server replay. Rank ordering: score descending, elapsed time ascending, health descending, submitted time ascending, UUID ascending. Each voyage has its own row, even for identical names.
 - Errors: `{error:{code,message}}`. Transient storage/config failures return 503 with no private details. 429 carries `Retry-After: 60`; hourly limits may require a longer wait.
 
-The v20 board version is `v20-1`; replay version is `v20-replay-1`. When changing physics or scoring, change both versions to start a fresh comparable board. Old rows stay stored but are filtered out. Replays are capped at 100,000 events, 600 game seconds and 4 MiB JSON. The original JS doubles must not be rounded. Wall-clock verification allows 5 seconds of clock/network tolerance. Pauses are allowed within the 30-minute challenge lifetime.
+Season 2 uses board version `v21-1` and replay version `v21-replay-1`. Season 1 remains read-only at `/api/leaderboard?season=v20`, without deleting rows or migrating the database. When changing physics or scoring, change both versions to start a fresh comparable board. Old rows stay stored but are filtered out. Replays are capped at 100,000 events, 600 game seconds and 4 MiB JSON. The original JS doubles must not be rounded. Wall-clock verification allows 5 seconds of clock/network tolerance. Pauses are allowed within the 30-minute challenge lifetime.
 
 ## Environment and database
 
@@ -32,3 +32,5 @@ No actual provider deployment, authenticated database migration, or real concurr
 ## Security boundary
 
 This prevents fabricated client totals and accidental duplicate rows. It is not cheat-proof: the public deterministic simulation can be automated and searched for favorable inputs, and a sufficiently patient bot can respect wall-clock limits. Tokens authenticate a run, not a human or account. Random seeds only affect support randomness, not every obstacle. There is no login, per-player best replacement, or retry score penalty. Do not describe ranks as authenticated human competition.
+
+At Season 2 cutover, the current board starts empty without altering archived entries. Existing Season 1 challenge tickets cannot submit under Season 2; users must reload and start a new voyage. No production test score should be inserted just to smoke-test this release. Verify read-only endpoints for both boards after cutover. The scorecard reconciles exactly from an authoritative replay; the current browser may also display the latest verified voyage's numeric ledger in its own Season 2 leaderboard view.

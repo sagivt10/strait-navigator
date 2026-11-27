@@ -1,0 +1,8 @@
+# Strait Navigator · Season 2
+- Forward touch drag + release holds speed while keeping the current heading. It does not keep applying left/right steering. Brake, Stop cruise, pause and lost pointer capture cancel the cruise. Keyboard remains hold-to-sail.
+- Hull model: 9% wider and 14% longer, with an on-deck flag and a modest bank and impact footprint. The 1.8 km course is unchanged. Normal speed cap is 15.2 vs 14; timed boost is still capped at 28.
+- Two additional patrols and two additional single-volley zones, with at least five seconds between volleys (paired shots are one volley). A third earned supply crate is available, without inventing three automatically granted rewards.
+- The scorecard separately itemizes coverage, docking, hull, close missile escapes, clean drone passes, physical supplies, pace allowance, time deducted and hits. A close escape can score once per launch zone. Server and browser use exactly the same deterministic score function against replay state.
+- New board v21-1; season 1 v20-1 remains readable. Do not delete historical rows or mix scores; no SQL migration is required. A new replay/challenge is required after cutover.
+- Calibration: identical 40-seed synthetic pilot at 30 FPS moved from 34/40 finishes (median 152.3 s for winners) to 30/40 (median 140.6 s, median 3 delivered crates vs 2). At 20 and 60 FPS the candidate finished 27/40 in this pilot. This is not a claim about measured human difficulty or physical-device feel.
+- Physical WebGL/multitouch playing remains a separate sign-off. DOM mock exercises actual game modules and GLB parsing, not GPU rendering.

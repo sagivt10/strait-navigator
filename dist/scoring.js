@@ -1,7 +1,7 @@
-import {MAX_HEALTH, MAX_SUPPORT_EARNED} from './logic.js?v=20';
+import {MAX_HEALTH, MAX_SUPPORT_EARNED, MAX_NEAR_MISS_ZONES, MAX_CLEAN_PASSES} from './logic.js?v=21';
 
-// Client-only design mock. These provisional rules are not an authoritative
-// score service, and the fictional table is neither stored nor submitted.
+// Shared deterministic scorecard: the standalone server computes this same
+// function from the verified replay, never from user-submitted totals.
 export const SCORING_RULES = Object.freeze({
   routeLength: 1800,
   maxHealth: MAX_HEALTH,
@@ -9,21 +9,25 @@ export const SCORING_RULES = Object.freeze({
   dockingBonus: 2000,
   pointsPerHull: 300,
   maxSupplies: MAX_SUPPORT_EARNED,
-  pointsPerSupply: 250,
+  pointsPerSupply: 180,
+  pointsPerNearMiss: 75,
+  pointsPerCleanPass: 35,
+  startingTimeBonus: 3200,
+  latePointsPerSecond: 2,
   targetSeconds: 180,
-  pointsPerSecond: 10,
+  pointsPerSecond: 14,
   pointsPerHit: 400,
 });
 
 const MAX_HITS = Math.floor(Number.MAX_SAFE_INTEGER / SCORING_RULES.pointsPerHit);
-const MODEL_LABEL = 'Provisional scoring mock';
+const MODEL_LABEL = 'Season 2 · Time and technique';
 const finite = (value, fallback = 0) => typeof value === 'number' && Number.isFinite(value) ? value : fallback;
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const whole = (value, max) => Math.floor(clamp(finite(value), 0, max));
 const elapsed = value => clamp(finite(value, SCORING_RULES.targetSeconds), 0, Number.MAX_SAFE_INTEGER);
 const statusLabels = Object.freeze({ won: 'Docked safely', lost: 'Voyage lost', playing: 'Under way', docking: 'Docking' });
 
-/** Pure, deterministic mock scoring. The supplied live run is never changed. */
+/** Pure, deterministic scoring. The supplied live run is never changed. */
 export function scoreRun(run = {}) {
   run = run && typeof run === 'object' ? run : {};
   const status = Object.hasOwn(statusLabels, run.state) ? run.state : 'playing';
@@ -35,6 +39,9 @@ export function scoreRun(run = {}) {
   const hits = whole(run.hits, MAX_HITS);
   const progress = whole(run.distance, SCORING_RULES.routeLength);
   const secondsSaved = won ? Math.max(0, SCORING_RULES.targetSeconds - timeSeconds) : 0;
+  const nearMisses = Array.isArray(run.cleanMissileZones) ? Math.min(MAX_NEAR_MISS_ZONES,new Set(run.cleanMissileZones.filter(n=>Number.isInteger(n)&&n>=0&&n<MAX_NEAR_MISS_ZONES)).size) : 0;
+  const cleanPasses = whole(run.droneDodges,MAX_CLEAN_PASSES);
+  const timeCost = won ? Math.min(SCORING_RULES.startingTimeBonus,Math.min(timeSeconds,180)*SCORING_RULES.pointsPerSecond+Math.max(0,timeSeconds-180)*SCORING_RULES.latePointsPerSecond) : 0;
   const rows = [
     {
       id: 'route', label: 'Route covered',
@@ -56,13 +63,10 @@ export function scoreRun(run = {}) {
       detail: `${supportCollected} ${supportCollected === 1 ? 'crate' : 'crates'} × ${SCORING_RULES.pointsPerSupply} points (up to ${SCORING_RULES.maxSupplies} physical pickups)`,
       points: supportCollected * SCORING_RULES.pointsPerSupply,
     },
-    {
-      id: 'time', label: 'Time bonus',
-      detail: won
-        ? `${secondsSaved} seconds under 3:00 × 10 points (finish rounded up)`
-        : 'Awarded only after a completed voyage',
-      points: secondsSaved * SCORING_RULES.pointsPerSecond,
-    },
+    {id:'near-misses',label:'Close missile escapes',detail:`${nearMisses} unique launch zones × ${SCORING_RULES.pointsPerNearMiss} · one award per zone`,points:nearMisses*SCORING_RULES.pointsPerNearMiss},
+    {id:'clean-passes',label:'Clean drone passes',detail:`${cleanPasses} clean passes × ${SCORING_RULES.pointsPerCleanPass}`,points:cleanPasses*SCORING_RULES.pointsPerCleanPass},
+    {id:'time',label:'Pace allowance',detail:won?'Starting allowance awarded at the dock':'Available only after docking',points:won?SCORING_RULES.startingTimeBonus:0},
+    {id:'time-charged',label:'Time spent',detail:won?`Elapsed ${timeSeconds} s · −14 pts/sec through 3:00, then −2 pts/sec`:'No pace bonus or time charge when the voyage does not finish',points:timeCost?-timeCost:0},
     {
       id: 'hits', label: 'Damage taken',
       detail: `${hits.toLocaleString('en-US')} ${hits === 1 ? 'hit' : 'hits'} × −400 points`,
@@ -70,7 +74,7 @@ export function scoreRun(run = {}) {
     },
   ];
   const earned = rows.reduce((sum, row) => sum + Math.max(0, row.points), 0);
-  const deducted = hits * SCORING_RULES.pointsPerHit;
+  const deducted = rows.reduce((sum,row)=>sum+Math.max(0,-row.points),0);
   const subtotal = earned - deducted;
   const floorAdjustment = Math.max(0, -subtotal);
   if (floorAdjustment) rows.push({
@@ -78,14 +82,14 @@ export function scoreRun(run = {}) {
     detail: 'Scores stop at zero; this is not an earned bonus', points: floorAdjustment,
   });
   const total = Math.max(0, subtotal);
-  // Letter grades, like the weights above, are only presentation placeholders.
-  const grade = total >= 5000 ? 'S' : total >= 4300 ? 'A' : total >= 3500 ? 'B' : total >= 2000 ? 'C' : 'D';
+  // Grades are presentation only and are not used for ranking.
+  const grade = total >= 6350 ? 'S' : total >= 5350 ? 'A' : total >= 4200 ? 'B' : total >= 2000 ? 'C' : 'D';
   return {
     total, subtotal, earned, deducted, floorAdjustment, grade, status,
     statusLabel: statusLabels[status], time, timeSeconds, health, hits, progress, supportCollected,
     progressPercent: Math.round(progress / SCORING_RULES.routeLength * 100),
-    secondsSaved, rows, provisional: true, modelLabel: MODEL_LABEL,
-    scoringNote: `Physical supply pickups award +${SCORING_RULES.pointsPerSupply} points each, up to ${SCORING_RULES.maxSupplies} crates per voyage. Dispatch, delivery, ignored crates, drones, missiles and shield interceptions award no direct points in this mock.`,
+    secondsSaved, nearMisses, cleanPasses, rows, provisional: false, modelLabel: MODEL_LABEL,
+    scoringNote: 'One close missile escape per launch zone; neither repeated launches nor shield interceptions can farm points.',
   };
 }
 
