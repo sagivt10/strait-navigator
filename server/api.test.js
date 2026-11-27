@@ -109,3 +109,13 @@ test('empty names sanitize safely; overlong names and oversized event arrays rej
  assert.equal((await submit(h,c,{version:REPLAY_VERSION,events:Array.from({length:100001},()=>[0,0,0])})).status,400);
  const r=await submit(h,c,replay,{name:'<script>\u202e\u0000'});assert.equal(r.status,200);assert.equal(r.data.entry.name,'script');
 });
+
+test('new season starts separately while the old leaderboard stays readable', async()=>{
+ const h=harness(),seen=[];
+ h.store.board=async version=>{seen.push(version);return {entries:[],total:0,version}};
+ assert.equal((await h.call('/api/leaderboard')).data.version,'v21-1');
+ assert.equal((await h.call('/api/leaderboard?season=v20')).data.version,'v20-1');
+ assert.deepEqual(seen,['v21-1','v20-1']);
+ const c=await challenge(h);assert.equal(c.boardVersion,'v21-1');assert.equal(c.version,'v21-replay-1');
+ assert.equal(h.entries.size,0);
+});

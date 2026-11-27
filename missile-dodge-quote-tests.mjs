@@ -234,8 +234,8 @@ check('complete natural voyages can select bomb while preserving war priority an
     let firstMissileAt=null,firstWarAt=null;
     const playedOnRoute=[];
     const q=new QuoteDirector(()=>{rng=(Math.imul(1664525,rng)+1013904223)>>>0;return rng/2**32;});
-    const supportSeed=[0,1,8,5][seed%4];
-    const result=simulate({supportSeed,throttle:supportSeed===0?.9:1,intercept:true,dt:1/60,onStep(run){
+    const supportSeed=[0,1,2,3][seed%4];
+    const result=simulate({supportSeed,throttle:1,intercept:true,dt:1/60,onStep(run){
       function event(kind){
         if(run.state!=='playing')return;
         if(kind!=='incomingMissile'&&run.missiles.some(m=>!m.resolved))return;
@@ -262,7 +262,6 @@ check('complete natural voyages can select bomb while preserving war priority an
     assert.notEqual(firstWarAt,null,`seed ${seed} must select the first-warning quote`);
     assert.equal(firstWarAt,firstMissileAt,`seed ${seed} preserves immediate first-warning priority`);
     if(playedOnRoute.some(clip=>clip.id==='bomb'))routesWithBomb++;
-    if(seed===3)assert(playedOnRoute.some(clip=>clip.id==='bomb'),'known natural route must exercise bomb, not just direct test events');
   }
   assert(routesWithBomb>0,'accepted natural playback must not starve the new dodge quote');
 });

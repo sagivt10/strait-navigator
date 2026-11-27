@@ -1,7 +1,9 @@
-import {LeaderboardClient} from './leaderboard-client.js';
-import {leaderboardMarkup} from './live-score-view.js';
-import {loadLastVoyage} from './voyage-history.js';
+import {LeaderboardClient} from './leaderboard-client.js?v=21';
+import {leaderboardMarkup} from './live-score-view.js?v=21';
+import {loadLastVoyage} from './voyage-history.js?v=21';
 const client = new LeaderboardClient();
+const archive=new URLSearchParams(location.search).get('season')==='v20';
+document.getElementById('season-title').textContent=archive?'Season 1 · archive':'Season 2 · live leaderboard';
 const $ = id => document.getElementById(id);
 async function refresh() {
   $('refresh').disabled = true;
@@ -13,10 +15,19 @@ async function refresh() {
   });
   await recover;
   try {
-    const board = await client.board();
+    const board = await client.board({archive});
     const last = loadLastVoyage();
     const current = board.entries.find(entry => entry.id === last?.entry.id);
     $('board').innerHTML = leaderboardMarkup({...board, current, limit:100});
+    const detail=$('own-score'), ledger=$('own-score-rows');
+    ledger.replaceChildren();
+    detail.hidden=!last?.scoreRows?.length||last.entry.version!==board.version;
+    if(!detail.hidden)for(const row of last.scoreRows){
+      const li=document.createElement('li'), label=document.createElement('span'), score=document.createElement('strong');
+      label.textContent=row.label;score.textContent=(row.points>0?'+':'')+row.points.toLocaleString('en-US');
+      li.append(label,score);ledger.append(li);
+    }
+
     $('status').textContent = `${board.total} ranked voyages · Updated ${new Date().toLocaleTimeString()}`;
   } catch { $('status').textContent = 'Leaderboard unavailable. Please retry shortly. No sample scores are shown.'; }
   $('refresh').disabled = false;

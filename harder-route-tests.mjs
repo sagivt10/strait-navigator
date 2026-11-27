@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
-import {COURSE_LENGTH,DOCK,DRONES,MISSILE_ZONES,channelAt,createRun,droneAt,stepRun} from './dist/logic.js';
-import {simulateHarderRoute} from './harder-route-simulate.mjs';
+import {COURSE_LENGTH,DOCK,DRONES,MISSILE_ZONES,channelAt,createRun,droneAt,stepRun} from './test-fixtures/season1/dist/logic.js';
+import {simulateHarderRoute} from './test-fixtures/season1/harder-route-simulate.mjs';
 let checks=0;
 function check(name,fn){fn();checks++;console.log(`PASS: ${name}`);}
 

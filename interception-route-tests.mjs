@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {simulateHarderRoute} from './harder-route-simulate.mjs';
+import {simulateHarderRoute} from './test-fixtures/season1/harder-route-simulate.mjs';
 const cases=[
   {supportSeed:0,kinds:['boost','boost'],shots:[5],throttle:.9},
   {supportSeed:1,kinds:['intercept','boost'],shots:[5,6]},

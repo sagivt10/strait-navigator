@@ -1,9 +1,9 @@
-import {createRun, stepRun, fireIntercept} from './logic.js?v=20';
-import {scoreRun} from './scoring.js?v=20';
+import {createRun, stepRun, fireIntercept} from './logic.js?v=21';
+import {scoreRun} from './scoring.js?v=21';
 
-// Network protocol version pins the approved v20 physics AND scoring rules.
+// Network protocol version pins the approved v21 physics AND scoring rules.
 // Never round dt/controls: analog steering and frame-time changes affect physics.
-export const REPLAY_VERSION = 'v20-replay-1';
+export const REPLAY_VERSION = 'v21-replay-1';
 export const MAX_REPLAY_EVENTS = 100000;
 export const MAX_RUN_SECONDS = 600;
 export const MAX_REPLAY_BYTES = 4 * 1024 * 1024 - 4096;

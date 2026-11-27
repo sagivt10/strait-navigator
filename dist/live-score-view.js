@@ -1,4 +1,4 @@
-import {scoreMarkup} from './score-view.js?v=20';
+import {scoreMarkup} from './score-view.js?v=21';
 import {sanitizeCaptainName} from './captain-name.js';
 const number = new Intl.NumberFormat('en-US');
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -30,10 +30,11 @@ export function liveScoreMarkup(run, {state = 'practice', board, entry, message,
     .replace(' · PROVISIONAL SCORE', ' · VOYAGE SCORE')
     .replace('<div class="score-total">', `<p class="voyage-captain">${esc(sanitizeCaptainName(run.playerName))}</p><div class="score-total">`)
     .replace('Every point accounted for. Nothing submitted.', esc(message || status))
-    .replace('Draft rules', 'v20 rules')
+    .replace('Draft rules', 'Season 2 rules')
     .replace('How this mock score works', 'How the score works')
-    .replace('These are proposed rules, not a final competitive system.', 'Ranked voyages use these v20 rules. Each completed ranked voyage is a separate entry.')
+    .replace('These are proposed rules, not a final competitive system.', 'Ranked voyages use these Season 2 rules. Each completed ranked voyage is a separate entry.')
     .replace('award no direct points in this mock', 'award no direct points');
+  if(state==='practice'&&!board&&!message)return base+`<p class="demo-badge">PRACTICE</p></div>`;
   return `${base}<section class="demo-board live-board" aria-labelledby="leaderboard-title"><div class="section-heading"><h3 id="leaderboard-title">The captain’s club</h3><span class="demo-badge">${state === 'saved' ? 'LIVE' : esc(state.toUpperCase())}</span></div><p class="board-disclaimer">${esc(message || status)}</p>${board ? leaderboardMarkup({...board, current:entry}) : '<p class="board-disclaimer">The real table appears when the ranking service responds. No sample rivals are shown.</p>'}${state === 'pending' ? '<button class="rank-retry" type="button">Retry saving voyage</button>' : ''}<div class="board-footnote">No account required. Nicknames are not verified identities. <a href="leaderboard.html">Full leaderboard</a> · <a href="privacy.html">Ranking privacy</a></div></section></div>`;
 }
 export function renderLiveScoreReport(container, run, options) { container.innerHTML = liveScoreMarkup(run, options); }

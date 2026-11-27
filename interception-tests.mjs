@@ -25,7 +25,7 @@ check('API and pristine reset state',()=>{
 });
 
 check('single introduction, repeated mid-route pairs and double-radius ending pair',()=>{
-  assert.equal(DRONES.length,9);
+  assert.equal(DRONES.length,11);
   assert.deepEqual(DRONES.slice(0,2),baseline.DRONES.slice(0,2));
   assert(DRONES[2].pair&&DRONES[7].pair&&DRONES[3].pair&&DRONES[8].pair);
   for(const d of DRONES.slice(5,7)){assert.equal(d.radius,2*baseline.DRONES[5].radius);assert(d.z<-1500&&d.z>-1750);}
@@ -37,19 +37,19 @@ check('single introduction, repeated mid-route pairs and double-radius ending pa
 });
 
 check('no target does not consume charge or mutate interception state',()=>{
-  const r=createRun();
+  const r=createRun();r.heading=Math.PI;
   assert.equal(target(r),-1);fireIntercept(r);
   assert.equal(r.interceptsLeft,1);assert.deepEqual(r.intercepted,[]);assert.equal(r.lastIntercept,null);
 });
 
 check('range admits a nearby forward target and rejects a distant one',()=>{
-  const r=createRun(),p=droneAt(DRONES[0],0);
+  const r=createRun(),p=droneAt(DRONES[0],0);r.intercepted.push(9,10);
   r.x=p.x;r.z=p.z+210;assert.equal(target(r),0);
   r.z=p.z+230;assert.equal(target(r),-1);fireIntercept(r);assert.equal(r.interceptsLeft,1);
 });
 
 check('exact 220-unit range includes altitude and rejects just outside',()=>{
-  const r=createRun(),p=droneAt(DRONES[0],0),vertical=p.y-2.4;
+  const r=createRun(),p=droneAt(DRONES[0],0),vertical=p.y-2.4;r.intercepted.push(9,10);
   const horizontal=Math.sqrt(m.INTERCEPT_RANGE**2-vertical**2);
   r.x=p.x;r.z=p.z+horizontal-1e-6;assert.equal(target(r),0);
   r.z=p.z+horizontal+1e-6;assert.equal(target(r),-1);
@@ -57,7 +57,7 @@ check('exact 220-unit range includes altitude and rejects just outside',()=>{
 });
 
 check('forward hemisphere follows ship heading rather than course direction',()=>{
-  const r=createRun(),p=droneAt(DRONES[0],0);
+  const r=createRun(),p=droneAt(DRONES[0],0);r.intercepted.push(9,10);
   r.x=p.x;r.z=p.z+100;r.heading=Math.PI;assert.equal(target(r),-1);
   r.z=p.z-100;assert.equal(target(r),0);
 });
@@ -71,7 +71,7 @@ check('nearest eligible ending drone is selected',()=>{
 });
 
 check('inactive drone behind the ship cannot be intercepted',()=>{
-  const r=createRun(),p=droneAt(DRONES[0],0);
+  const r=createRun(),p=droneAt(DRONES[0],0);r.intercepted.push(9,10);
   r.x=p.x;r.z=p.z-60;r.intercepted=DRONES.map((_,id)=>id).filter(id=>id!==0);
   assert.equal(target(r),-1);fireIntercept(r);assert.equal(r.interceptsLeft,1);
 });

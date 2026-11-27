@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
-import { SCORING_RULES, scoreRun, SAMPLE_RUNS, DEMO_LEADERBOARD, insertDemoRun } from './dist/scoring.js';
-import { MAX_SUPPORT_EARNED, SUPPORT_PICKUP_RADIUS, createRun, damage, stepRun } from './dist/logic.js';
-import { scoreMarkup } from './dist/score-view.js';
+import { SCORING_RULES, scoreRun, SAMPLE_RUNS, DEMO_LEADERBOARD, insertDemoRun } from './test-fixtures/season1/dist/scoring.js';
+import { MAX_SUPPORT_EARNED, SUPPORT_PICKUP_RADIUS, createRun, damage, stepRun } from './test-fixtures/season1/dist/logic.js';
+import { scoreMarkup } from './test-fixtures/season1/dist/score-view.js';
 
 let checks = 0;
 function check(name, test) {
