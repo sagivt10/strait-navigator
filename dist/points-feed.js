@@ -11,7 +11,7 @@ export function pointChanges(a,b){
   [b.distance-a.distance,progressStep*rules.pointsPerMetre,'Route progress'],
  ].filter(([n])=>n>0).map(([n,rate,label])=>({points:n*rate,label}));
 }
-export function makePointsFeed(container, limit=3){
+export function makePointsFeed(container, limit=2){
  let prev=pointSnapshot();
  function reset(run){prev=pointSnapshot(run);container?.replaceChildren?.();}
  return {reset,tick(run){

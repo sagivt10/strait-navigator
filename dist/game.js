@@ -1,4 +1,4 @@
-import {makePointsFeed} from './points-feed.js?v=22';
+import {makePointsFeed} from './points-feed.js?v=22-hud';
 import {MISSILE_LIFT,HAZARD_PACE} from './logic.js?v=22';
 import {helmDrag,releaseCruise,resolveThrottle} from './touch-helm.js';
 import {HULL_WIDTH_SCALE,HULL_LENGTH_SCALE} from './logic.js?v=22';
