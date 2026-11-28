@@ -1,4 +1,4 @@
-import {scoreMarkup} from './score-view.js?v=21';
+import {scoreMarkup} from './score-view.js?v=22';
 import {sanitizeCaptainName} from './captain-name.js';
 const number = new Intl.NumberFormat('en-US');
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));

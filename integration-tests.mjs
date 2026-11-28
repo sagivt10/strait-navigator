@@ -3,7 +3,7 @@ import {channelAt as channelAtTest,DOCK as DOCK_TEST} from './dist/logic.js';
 const uiSources=await Promise.all(['dist/index.html','dist/game.js','dist/credits.html'].map(path=>fs.readFile(path,'utf8')));
 for(const source of uiSources)assert(!/[\u0590-\u05ff]/u.test(source),'production interface must be fully English');
 for(const source of [uiSources[0],uiSources[2]])assert(source.includes('lang="en" dir="ltr"'),'English documents must use left-to-right layout');
-assert(uiSources[0].includes('game.js?v=21')&&uiSources[0].includes('style.css?v=21'),'English build uses a fresh asset version');
+assert(uiSources[0].includes('game.js?v=22')&&uiSources[0].includes('style.css?v=22'),'English build uses a fresh asset version');
 console.log('PASS: fully English interface, left-to-right document language and v21 game/supply/score cache version.');
 const elements=new Map(),globalHandlers=new Map();const ctx={clearRect(){},fillRect(){},strokeRect(){},beginPath(){},moveTo(){},lineTo(){},stroke(){},fill(){},fillText(){},arc(){},closePath(){},ellipse(){},save(){},restore(){},translate(){},rotate(){}};
 function el(id){if(!elements.has(id))elements.set(id,{id,textContent:'',innerHTML:'',disabled:false,style:{setProperty(){}},handlers:new Map(),classList:{set:new Set(['result','supply-cue'].includes(id)?['hidden']:[]),add(k){this.set.add(k)},remove(k){this.set.delete(k)},contains(k){return this.set.has(k)},toggle(k,b){if(b)this.set.add(k);else this.set.delete(k)}},setAttribute(){},setPointerCapture(){},getBoundingClientRect(){return{left:0,top:0,width:132,height:132}},addEventListener(type,fn){this.handlers.set(type,fn)},getContext(){return ctx;},firstChild:{textContent:''},click(){this.onclick?.();}});return elements.get(id);}

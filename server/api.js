@@ -2,8 +2,8 @@ import { randomBytes, randomUUID, createHash, createHmac, timingSafeEqual } from
 import { replayRun, REPLAY_VERSION, MAX_REPLAY_EVENTS } from '../dist/replay.js';
 import { sanitizeCaptainName } from '../dist/captain-name.js';
 import { createSupabaseStore } from './store.js';
-export const BOARD_VERSION = 'v21-1';
-const ARCHIVED_BOARD_VERSION='v20-1';
+export const BOARD_VERSION = 'v22-1';
+const boardVersion = season => season==='v20'?'v20-1':season==='v21'?'v21-1':BOARD_VERSION;
 export const MAX_BODY_BYTES = 4 * 1024 * 1024;
 const TTL_MS = 30 * 60 * 1000;
 const hash = value => createHash('sha256').update(value).digest('hex');
@@ -42,7 +42,7 @@ export function createApi({ store, env = process.env, now = () => Date.now(), re
         const key = createHmac('sha256', env.LEADERBOARD_RATE_SALT).update(ip).digest('hex');
         const limit = { board: 600, create: 120, submit: 240 }[scope];
         if (!(await db.rate(key, scope, limit, scope === 'board' ? 60 : 3600))) outcome = fail(429, 'rate', errors.rate[1]);
-        else if (scope === 'board') outcome = { status: 200, body: await db.board(new URL(request.url).searchParams.get('season')==='v20'?ARCHIVED_BOARD_VERSION:BOARD_VERSION) };
+        else if (scope === 'board') outcome = { status: 200, body: await db.board(boardVersion(new URL(request.url).searchParams.get('season'))) };
         else if (scope === 'create') {
           const id = randomUUID(), token = randomBytes(32).toString('base64url');
           const challenge = { id, token_hash: hash(token), seed: randomBytes(4).readUInt32LE(), version: REPLAY_VERSION, board_version: BOARD_VERSION, created_at: new Date(now()).toISOString(), expires_at: new Date(now() + TTL_MS).toISOString() };

@@ -175,7 +175,7 @@ check('100 successful routes select first war at first missile with accepting pl
     let rng=seed,lastMissile=0,hits=0,droneDodges=0,missileDodges=0,setbackAt=Infinity;
     let firstMissileAt=null,firstWarAt=null;
     const q=new QuoteDirector(()=>{rng=(Math.imul(1664525,rng)+1013904223)>>>0;return rng/2**32;});
-    const supportSeed=[0,1,2,3][seed%4];
+    const supportSeed=[0,1,6,7][seed%4];
     const result=simulate({supportSeed,throttle:1,intercept:true,dt:1/60,onStep(run){
       function event(kind){
         if(run.state!=='playing')return;

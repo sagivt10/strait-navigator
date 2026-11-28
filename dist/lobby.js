@@ -1,7 +1,7 @@
-import {LeaderboardClient} from './leaderboard-client.js?v=21';
-import {leaderboardMarkup} from './live-score-view.js?v=21';
+import {LeaderboardClient} from './leaderboard-client.js?v=22';
+import {leaderboardMarkup} from './live-score-view.js?v=22';
 import {loadCaptainName, sanitizeCaptainName} from './captain-name.js';
-import {loadLastVoyage} from './voyage-history.js?v=21';
+import {loadLastVoyage} from './voyage-history.js?v=22';
 
 const client = new LeaderboardClient();
 const panels = [...document.querySelectorAll('[data-lobby-board]')];

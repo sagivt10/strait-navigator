@@ -1,5 +1,5 @@
-import {SAMPLE_RUNS,SCORING_RULES} from './scoring.js?v=21';
-import {renderScoreReport} from './score-view.js?v=21';
+import {SAMPLE_RUNS,SCORING_RULES} from './scoring.js?v=22';
+import {renderScoreReport} from './score-view.js?v=22';
 import {loadCaptainName,saveCaptainName} from './captain-name.js';
 import {animateLeaderboardEntry} from './score-entry.js';
 let selected='won',entry=null;

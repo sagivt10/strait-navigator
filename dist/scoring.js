@@ -1,4 +1,4 @@
-import {MAX_HEALTH, MAX_SUPPORT_EARNED, MAX_NEAR_MISS_ZONES, MAX_CLEAN_PASSES} from './logic.js?v=21';
+import {MAX_HEALTH, MAX_SUPPORT_EARNED, MAX_NEAR_MISS_ZONES, MAX_CLEAN_PASSES} from './logic.js?v=22';
 
 // Shared deterministic scorecard: the standalone server computes this same
 // function from the verified replay, never from user-submitted totals.

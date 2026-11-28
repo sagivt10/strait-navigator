@@ -1,9 +1,9 @@
-import {LeaderboardClient} from './leaderboard-client.js?v=21';
-import {leaderboardMarkup} from './live-score-view.js?v=21';
-import {loadLastVoyage} from './voyage-history.js?v=21';
+import {LeaderboardClient} from './leaderboard-client.js?v=22';
+import {leaderboardMarkup} from './live-score-view.js?v=22';
+import {loadLastVoyage} from './voyage-history.js?v=22';
 const client = new LeaderboardClient();
-const archive=new URLSearchParams(location.search).get('season')==='v20';
-document.getElementById('season-title').textContent=archive?'Season 1 · archive':'Season 2 · live leaderboard';
+const season=new URLSearchParams(location.search).get('season');
+document.getElementById('season-title').textContent=season==='v20'?'Season 1 · archive':season==='v21'?'Season 2 original pace · archive':'Season 2 faster pace · live leaderboard';
 const $ = id => document.getElementById(id);
 async function refresh() {
   $('refresh').disabled = true;
@@ -15,7 +15,7 @@ async function refresh() {
   });
   await recover;
   try {
-    const board = await client.board({archive});
+    const board = await client.board({season});
     const last = loadLastVoyage();
     const current = board.entries.find(entry => entry.id === last?.entry.id);
     $('board').innerHTML = leaderboardMarkup({...board, current, limit:100});

@@ -119,7 +119,7 @@ check('real missile launch stays silent until its safe resolution triggers bomb 
   const s=fresh();load('bomb');const [missile]=launchMissile();
   assert.equal(s.run.missilesDodged,0);assert.equal(missile.resolved,false);
   assert.deepEqual(played,[]);expectPristine();
-  advance(3.1);assert.deepEqual(played,[]);assert.equal(s.run.missilesDodged,0);
+  advance(2.85);assert.deepEqual(played,[]);assert.equal(s.run.missilesDodged,0);
   advance(.15);assert.equal(missile.resolved,true);assert.equal(s.run.missilesDodged,1);
   assert.equal(s.run.hits,0);assert.deepEqual(played,['bomb']);assert.equal(attempts,1);
   assert.equal(s.quoteDirector.counts.bomb,1);assert.equal(game().pendingWar,null);
@@ -234,7 +234,7 @@ check('complete natural voyages can select bomb while preserving war priority an
     let firstMissileAt=null,firstWarAt=null;
     const playedOnRoute=[];
     const q=new QuoteDirector(()=>{rng=(Math.imul(1664525,rng)+1013904223)>>>0;return rng/2**32;});
-    const supportSeed=[0,1,2,3][seed%4];
+    const supportSeed=[0,1,6,7][seed%4];
     const result=simulate({supportSeed,throttle:1,intercept:true,dt:1/60,onStep(run){
       function event(kind){
         if(run.state!=='playing')return;

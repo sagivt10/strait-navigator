@@ -6,3 +6,6 @@
 - New board v21-1; season 1 v20-1 remains readable. Do not delete historical rows or mix scores; no SQL migration is required. A new replay/challenge is required after cutover.
 - Calibration: identical 40-seed synthetic pilot at 30 FPS moved from 34/40 finishes (median 152.3 s for winners) to 30/40 (median 140.6 s, median 3 delivered crates vs 2). At 20 and 60 FPS the candidate finished 27/40 in this pilot. This is not a claim about measured human difficulty or physical-device feel.
 - Physical WebGL/multitouch playing remains a separate sign-off. DOM mock exercises actual game modules and GLB parsing, not GPU rendering.
+
+## Faster-pace feedback build (v22)
+Adds a retained joystick marker with a world bearing, real-time scoring notices per category, and a starting pace match for visual and logical patrol movement and shot travel (15.2/14). Launch cadence is unchanged and the new warning is just under three seconds. Scoring weights stay the same, but differing gameplay timings require a separate ranked board `v22-1` and replay `v22-replay-1`; previous scores remain readable at `?season=v21` and `?season=v20`. Keep production on the current rules until approved.
